@@ -19,7 +19,6 @@ func NewSignature(r, s secp.ModNScalar) *Signature {
 }
 
 var (
-	// Used in RFC6979 implementation when testing the nonce for correctness
 	one = big.NewInt(1)
 
 	// oneInitializer is used to fill a byte slice with byte 0x01.  It is provided
@@ -213,202 +212,22 @@ func checkHashTypeEncoding(hashType SigHashType) error {
 	return nil
 }
 
-func checkSignatureEncoding(sig []byte) error {
 
-	const (
-		asn1SequenceID = 0x30
-		asn1IntegerID  = 0x02
-
-		// minSigLen is the minimum length of a DER encoded signature and is
-		// when both R and S are 1 byte each.
-		//
-		// 0x30 + <1-byte> + 0x02 + 0x01 + <byte> + 0x2 + 0x01 + <byte>
-		minSigLen = 8
-
-		// maxSigLen is the maximum length of a DER encoded signature and is
-		// when both R and S are 33 bytes each.  It is 33 bytes because a
-		// 256-bit integer requires 32 bytes and an additional leading null byte
-		// might required if the high bit is set in the value.
-		//
-		// 0x30 + <1-byte> + 0x02 + 0x21 + <33 bytes> + 0x2 + 0x21 + <33 bytes>
-		maxSigLen = 72
-
-		// sequenceOffset is the byte offset within the signature of the
-		// expected ASN.1 sequence identifier.
-		sequenceOffset = 0
-
-		// dataLenOffset is the byte offset within the signature of the expected
-		// total length of all remaining data in the signature.
-		dataLenOffset = 1
-
-		// rTypeOffset is the byte offset within the signature of the ASN.1
-		// identifier for R and is expected to indicate an ASN.1 integer.
-		rTypeOffset = 2
-
-		// rLenOffset is the byte offset within the signature of the length of
-		// R.
-		rLenOffset = 3
-
-		// rOffset is the byte offset within the signature of R.
-		rOffset = 4
-	)
-
-	// The signature must adhere to the minimum and maximum allowed length.
-	sigLen := len(sig)
-	if sigLen < minSigLen {
-		str := fmt.Sprintf("malformed signature: too short: %d < %d", sigLen,
-			minSigLen)
-        return errors.New(str)
-	}
-	if sigLen > maxSigLen {
-		str := fmt.Sprintf("malformed signature: too long: %d > %d", sigLen,
-			maxSigLen)
-        return errors.New(str)
-	}
-
-	// The signature must start with the ASN.1 sequence identifier.
-	if sig[sequenceOffset] != asn1SequenceID {
-		str := fmt.Sprintf("malformed signature: format has wrong type: %#x",
-			sig[sequenceOffset])
-        return errors.New(str)
-	}
-
-	// The signature must indicate the correct amount of data for all elements
-	// related to R and S.
-	if int(sig[dataLenOffset]) != sigLen-2 {
-		str := fmt.Sprintf("malformed signature: bad length: %d != %d",
-			sig[dataLenOffset], sigLen-2)
-        return errors.New(str)
-	}
-
-	// Calculate the offsets of the elements related to S and ensure S is inside
-	// the signature.
-	//
-	// rLen specifies the length of the big-endian encoded number which
-	// represents the R value of the signature.
-	//
-	// sTypeOffset is the offset of the ASN.1 identifier for S and, like its R
-	// counterpart, is expected to indicate an ASN.1 integer.
-	//
-	// sLenOffset and sOffset are the byte offsets within the signature of the
-	// length of S and S itself, respectively.
-	rLen := int(sig[rLenOffset])
-	sTypeOffset := rOffset + rLen
-	sLenOffset := sTypeOffset + 1
-	if sTypeOffset >= sigLen {
-		str := "malformed signature: S type indicator missing"
-        return errors.New(str)
-	}
-	if sLenOffset >= sigLen {
-		str := "malformed signature: S length missing"
-        return errors.New(str)
-	}
-
-	// The lengths of R and S must match the overall length of the signature.
-	//
-	// sLen specifies the length of the big-endian encoded number which
-	// represents the S value of the signature.
-	sOffset := sLenOffset + 1
-	sLen := int(sig[sLenOffset])
-	if sOffset+sLen != sigLen {
-		str := "malformed signature: invalid S length"
-        return errors.New(str)
-	}
-
-	// R elements must be ASN.1 integers.
-	if sig[rTypeOffset] != asn1IntegerID {
-		str := fmt.Sprintf("malformed signature: R integer marker: %#x != %#x",
-			sig[rTypeOffset], asn1IntegerID)
-        return errors.New(str)
-	}
-
-	// Zero-length integers are not allowed for R.
-	if rLen == 0 {
-		str := "malformed signature: R length is zero"
-        return errors.New(str)
-	}
-
-	// R must not be negative.
-	if sig[rOffset]&0x80 != 0 {
-		str := "malformed signature: R is negative"
-        return errors.New(str)
-	}
-
-	// Null bytes at the start of R are not allowed, unless R would otherwise be
-	// interpreted as a negative number.
-	if rLen > 1 && sig[rOffset] == 0x00 && sig[rOffset+1]&0x80 == 0 {
-		str := "malformed signature: R value has too much padding"
-        return errors.New(str)
-	}
-
-	// S elements must be ASN.1 integers.
-	if sig[sTypeOffset] != asn1IntegerID {
-		str := fmt.Sprintf("malformed signature: S integer marker: %#x != %#x",
-			sig[sTypeOffset], asn1IntegerID)
-        return errors.New(str)
-	}
-
-	// Zero-length integers are not allowed for S.
-	if sLen == 0 {
-		str := "malformed signature: S length is zero"
-        return errors.New(str)
-	}
-
-	// S must not be negative.
-	if sig[sOffset]&0x80 != 0 {
-		str := "malformed signature: S is negative"
-        return errors.New(str)
-	}
-
-	// Null bytes at the start of S are not allowed, unless S would otherwise be
-	// interpreted as a negative number.
-	if sLen > 1 && sig[sOffset] == 0x00 && sig[sOffset+1]&0x80 == 0 {
-		str := "malformed signature: S value has too much padding"
-        return errors.New(str)
-	}
-
-	return nil
-}
-
-func checkPubKeyEncoding(pubKey []byte) error {
-
-	if len(pubKey) == 33 && (pubKey[0] == 0x02 || pubKey[0] == 0x03) {
-		// Compressed
-		return nil
-	}
-	if len(pubKey) == 65 && pubKey[0] == 0x04 {
-		// Uncompressed
-		return nil
-	}
-
-	return errors.New("unsupported public key type")
-}
-
-// parseBaseSigAndPubkey attempts to parse a signature and public key according
-// to the base consensus rules, which expect an 33-byte public key and DER or
-// BER encoded signature.
-func parseBaseSigAndPubkey(pkBytes, fullSigBytes []byte) (*secp.PublicKey, *Signature, SigHashType, error) {
+func parseSigAndPubkey(pkBytes, fullSigBytes []byte) (*secp.PublicKey, *Signature, SigHashType, error) {
 	hashType := SigHashType(fullSigBytes[len(fullSigBytes)-1])
 	sigBytes := fullSigBytes[:len(fullSigBytes)-1]
 	if err := checkHashTypeEncoding(hashType); err != nil {
 		return nil, nil, 0, err
 	}
-	if err := checkSignatureEncoding(sigBytes); err != nil {
-		return nil, nil, 0, err
-	}
-	if err := checkPubKeyEncoding(pkBytes); err != nil {
-		return nil, nil, 0, err
-	}
 
-	// First, parse the public key, which we expect to be in the proper
-	// encoding.
+	// parse the public key
 	pubKey, err := secp.ParsePubKey(pkBytes)
 	if err != nil {
 		return nil, nil, 0, err
 	}
 
-	// Next, parse the signature which should be in DER or BER depending on
-	// the active script flags.
+	// parse the signature 
+    // we assume that every signature is in DER format
 	var signature *Signature
 	//if strictEncoding {
 		signature, err = parseSig(sigBytes, true)
@@ -420,4 +239,72 @@ func parseBaseSigAndPubkey(pkBytes, fullSigBytes []byte) (*secp.PublicKey, *Sign
 	}
 
 	return pubKey, signature, hashType, nil
+}
+
+func Verify(sig *Signature, hash []byte, pubKey *secp.PublicKey) bool {
+	if sig.r.IsZero() || sig.s.IsZero() {
+		return false
+	}
+
+	// Step 2.
+	//
+	// e = H(m)
+	var e secp.ModNScalar
+	e.SetByteSlice(hash)
+
+	// Step 3.
+	//
+	// w = S^-1 mod N
+	w := new(secp.ModNScalar).InverseValNonConst(&sig.s)
+
+	// Step 4.
+	//
+	// u1 = e * w mod N
+	// u2 = R * w mod N
+	u1 := new(secp.ModNScalar).Mul2(&e, w)
+	u2 := new(secp.ModNScalar).Mul2(&sig.r, w)
+
+	// Step 5.
+	//
+	// X = u1G + u2Q
+	var X, Q, u1G, u2Q secp.JacobianPoint
+	pubKey.AsJacobian(&Q)
+	secp.ScalarBaseMultNonConst(u1, &u1G)
+	secp.ScalarMultNonConst(u2, &Q, &u2Q)
+	secp.AddNonConst(&u1G, &u2Q, &X)
+
+	// Step 6.
+	//
+	// Fail if X is the point at infinity
+	if (X.X.IsZero() && X.Y.IsZero()) || X.Z.IsZero() {
+		return false
+	}
+
+	// Step 7.
+	//
+	// z = (X.z)^2 mod P (X.z is the z coordinate of X)
+	z := new(secp.FieldVal).SquareVal(&X.Z)
+
+	// Step 8.
+	//
+	// Verified if R * z == X.x (mod P)
+	sigRModP := modNScalarToField(&sig.r)
+	result := new(secp.FieldVal).Mul2(&sigRModP, z).Normalize()
+	if result.Equals(&X.X) {
+		return true
+	}
+
+	// Step 9.
+	//
+	// Fail if R + N >= P
+	if sigRModP.IsGtOrEqPrimeMinusOrder() {
+		return false
+	}
+
+	// Step 10.
+	//
+	// Verified if (R + N) * z == X.x (mod P)
+	sigRModP.Add(orderAsFieldVal)
+	result.Mul2(&sigRModP, z).Normalize()
+	return result.Equals(&X.X)
 }

@@ -1,6 +1,7 @@
 package transaction
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
@@ -36,6 +37,8 @@ func (o *Vout) SerializeSize() int {
     if err != nil {
         panic("Error while serializing Vin: " + err.Error())
     }
+
+
 	return 8 + VarIntSerializeSize(uint64(len(pubkeyscript))) + len(pubkeyscript)
 }
 
@@ -54,6 +57,21 @@ type Vin struct {
     Witness []string `json:"witness"`
     IsCoinbase bool `json:"is_coinbase"`
     Sequence int `json:"sequence"`
+}
+
+func SerializeWitnessSize(witness [][]byte) int {
+	// A varint to signal the number of elements the witness has.
+	n := VarIntSerializeSize(uint64(len(witness)))
+
+	// For each element in the witness, we'll need a varint to signal the
+	// size of the element, then finally the number of bytes the element
+	// itself comprises.
+	for _, witItem := range witness {
+		n += VarIntSerializeSize(uint64(len(witItem)))
+		n += len(witItem)
+	}
+
+	return n
 }
 
 // SerializeSize returns the number of bytes it would take to serialize the
@@ -81,6 +99,41 @@ type Transaction struct {
     Locktime uint32 `json:"locktime"`
     Vin []Vin `json:"vin"`
     Vout []Vout `json:"vout"`
+}
+
+
+func (tx *Transaction) calcHashPrevOuts() []byte {
+	var b bytes.Buffer
+	for _, in := range tx.Vin {
+        prevOutHash,_ := hex.DecodeString(in.Txid)
+        // transaction hash has to be reversed when used internally
+        prevOutHash = utils.ReverseBytes(prevOutHash)
+		b.Write(prevOutHash[:])
+
+		var buf [4]byte
+		binary.LittleEndian.PutUint32(buf[:], uint32(in.Vout))
+		b.Write(buf[:])
+	}
+
+    return utils.Hash(b.Bytes()[:])
+}
+func (tx *Transaction) calcHashSequence() []byte {
+	var b bytes.Buffer
+	for _, in := range tx.Vin {
+		var buf [4]byte
+		binary.LittleEndian.PutUint32(buf[:], uint32(in.Sequence))
+		b.Write(buf[:])
+	}
+
+    return utils.Hash(b.Bytes()[:])
+}
+
+func (tx *Transaction) calcHashOutputs() []byte {
+	var b bytes.Buffer
+	for _, out := range tx.Vout {
+        serializeAndWriteTxOutput(&b, out)
+	}
+    return utils.Hash(b.Bytes()[:])
 }
 
 
@@ -129,6 +182,21 @@ func (tx *Transaction) SerializeSize() int {
 		n += txOut.SerializeSize()
 	}
 
+	if tx.HasWitness() {
+		// The marker, and flag fields take up two additional bytes.
+		n += 2
+
+		// Additionally, factor in the serialized size of each of the
+		// witnesses for each txin.
+		for _, txin := range tx.Vin {
+            witness := make([][]byte, 0)
+            for _, wString := range txin.Witness{
+                wBytes, _ := hex.DecodeString(wString)
+                witness = append(witness, wBytes)
+            }
+			n += SerializeWitnessSize(witness)
+		}
+	}
 	return n
 }
 
