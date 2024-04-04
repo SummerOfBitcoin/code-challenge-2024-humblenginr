@@ -28,15 +28,10 @@ There are different types of transactions:
 3. p2wpkh (pay to script hash)
 4. p2wsh (pay to witness script hash)
 
-Each of these different types have to be handled differently. At the end of the day, verification is done by using the Script. 
-We have to feed the data into the Script interpreter and it will validate it. But before that step, we need to look at the type of the 
-transaction and identify how the data should be fed into the interpreter.
-
 What about multisigs?
 First we will only take these things into account. If a transaction any other type than this, then we will log it and see what it is.
 
 Previous output is included in the transaction itself.
-
 **Rules** 
 
 Sourced from [verify.cpp](https://github.com/bitcoin/bitcoin/blob/master/src/consensus/tx_verify.cpp), 
@@ -83,6 +78,18 @@ The process of verification consists of the following steps: (taken from https:/
 1. Check that the signature is encoded in the correct format - <DER Sgignature><Hashtyype>
 2. Check that the public key is encoded in the correct format - both compressed and uncompressed are accepted
 3. We serialize the transaction bytes using 'sighash' based on the sighash type - https://wiki.bitcoinsv.io/index.php/OP_CHECKSIG#:~:text=OP_CHECKSIG%20is%20an%20opcode%20that,signature%20check%20passes%20or%20fails.
+
+
+### Validation Rules
+What are the validations we have to perform is an important question to ask.
+INPUT:
+1. Verify pubkey address
+2. Verify pubkey_asm with pubkeyscript(?)
+3. Verify signature
+
+4. Verify (sum of outputs <= sum of inputs)
+
+We will start with these validations, and run the tests, and then based on the results we can add more rules.
 
 
 ### Assigning fee/size 

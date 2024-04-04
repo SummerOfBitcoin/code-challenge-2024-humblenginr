@@ -253,17 +253,17 @@ func serializeAndWriteTxInput(w io.Writer, ti Vin) error {
 
 
 
-// Should serialize the transaction according 
+// Serialize the transaction according 
 // to https://wiki.bitcoinsv.io/index.php/OP_CHECKSIG#:~:text=OP_CHECKSIG%20is%20an%20opcode%20that,signature%20check%20passes%20or%20fails.
-// If it is a segwit transaction, then we have to use https://github.com/bitcoin/bips/blob/master/bip-0144.mediawiki
 // I am also currently referencing the implementation from btcd golang repository - https://github.com/btcsuite/btcd
-func (t *Transaction) Serialize(doWitness bool, w io.Writer) ( error) {
+// doWitness - whether or not witness information should be included
+func (t *Transaction) Serialize(includeWitness bool, w io.Writer) ( error) {
     // nVersion
     buffer := make([]byte, 4)
     binary.LittleEndian.PutUint32(buffer,uint32(t.Version))
     w.Write(buffer)
     // witness
-    if doWitness {
+    if includeWitness {
 		if _, err := w.Write([]byte{0x00, 0x01}); err != nil {
 			return err
 		}
@@ -294,8 +294,7 @@ func (t *Transaction) Serialize(doWitness bool, w io.Writer) ( error) {
 			return  err
 		}
 	}
-    // witness
-    if doWitness {
+    if includeWitness {
 		for _, ti := range t.Vin {
             witness := make([][]byte, 0)
             for _, w := range ti.Witness {
@@ -347,6 +346,18 @@ func (t Transaction) GetFees() int {
 
 func (t Transaction) String() string {
     return fmt.Sprintf("Version: %d \nLocktime: %d \nVin: %s \nVout: %s", t.Version , t.Locktime, t.Vin, t.Vout)
+}
+
+func (t Transaction) TxHash() []byte {
+    w := bytes.NewBuffer(make([]byte, 0, t.SerializeSize()))
+    // For calculating txid, we don't need the witness data
+    err := t.Serialize(false, w)
+   if err != nil {
+      panic(err)
+   }
+    bytes := w.Bytes()
+    txhash := utils.DoubleHash(bytes)
+    return txhash
 }
 
 func (input Vin) GetScriptType() ScriptPubKeyType {

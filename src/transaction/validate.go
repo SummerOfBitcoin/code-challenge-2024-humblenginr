@@ -8,14 +8,6 @@ import (
 	secp "github.com/decred/dcrd/dcrec/secp256k1/v4"
 	"github.com/humblenginr/btc-miner/utils"
 )
-func CommonValidation(t Transaction) bool {
-    if (t.GetFees() < 0){
-        return false
-    } 
-    return true
-
-}
-
 var orderAsFieldVal = func() *secp.FieldVal {
 		var f secp.FieldVal
 		f.SetByteSlice(secp.Params().N.Bytes())
@@ -31,9 +23,28 @@ func modNScalarToField(v *secp.ModNScalar) secp.FieldVal {
 	return fv
 }
 
+func(tx Transaction) Validate(trIdx int) bool {
+    // Get transaction type
+    i := tx.Vin[trIdx]
+    // 1. Verify pubkey_asm
+    // 2. Sum of Inputs <= Sum of Outputs
+    if(tx.GetFees() < 0){
+        return false
+    }
+    // 3. Verify signature
+    scriptType := i.GetScriptType()
+    switch scriptType {
+    case P2PKH:
+       return validateP2PKH(tx, trIdx) 
+    case P2WPKH:
+       return validateP2WPKH(tx, trIdx) 
+    }
+    return true
+} 
+
 
 // TODO: Have to validate the public key hash first
-func ValidateP2PKH(tx Transaction, trIdx int) bool {
+func validateP2PKH(tx Transaction, trIdx int) bool {
     scriptSigInstrs := strings.Split(tx.Vin[trIdx].ScriptSigAsm, " ")
     pubkey, _ := hex.DecodeString(scriptSigInstrs[len(scriptSigInstrs)-1])
     sigBytes, _ := hex.DecodeString(scriptSigInstrs[1])
@@ -51,7 +62,7 @@ func ValidateP2PKH(tx Transaction, trIdx int) bool {
 }
 
 // TODO: Have to validate the public key hash first
-func ValidateP2WPKH( tx Transaction, trIdx int ) bool {
+func validateP2WPKH( tx Transaction, trIdx int ) bool {
     txIn := tx.Vin[trIdx]
     pubkey, _ := hex.DecodeString(txIn.Witness[1])
     sigBytes, _ := hex.DecodeString(txIn.Witness[0])
