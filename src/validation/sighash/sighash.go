@@ -1,11 +1,14 @@
-package transaction
+package sighash
 
 import (
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
+	"errors"
+	"fmt"
 
 	"github.com/humblenginr/btc-miner/utils"
+	"github.com/humblenginr/btc-miner/transaction"
 )
 
 type SigHashType uint32
@@ -21,11 +24,20 @@ const (
 	sigHashMask = 0x1f
 )
 
+func CheckHashTypeEncoding(hashType SigHashType) error {
+	sigHashType := hashType & ^SigHashAnyOneCanPay
+	if sigHashType < SigHashAll || sigHashType > SigHashSingle {
+		str := fmt.Sprintf("invalid hash type 0x%x", hashType)
+        return errors.New(str)
+	}
+	return nil
+}
+
 // calcSignatureHash computes the signature hash for the specified input of the
 // target transaction observing the desired signature hash type.
 // it works only for non-segwit transactions
 // https://wiki.bitcoinsv.io/index.php/OP_CHECKSIG#:~:text=OP_CHECKSIG%20is%20an%20opcode%20that,signature%20check%20passes%20or%20fails
-func calcSignatureHash(sigScript []byte, hashType SigHashType, tx *Transaction, idx int) []byte {
+func CalcSignatureHash(sigScript []byte, hashType SigHashType, tx *transaction.Transaction, idx int) []byte {
 	if hashType&sigHashMask == SigHashSingle && idx >= len(tx.Vout) {
 		var hash [32]byte
 		hash[0] = 0x01
@@ -91,6 +103,8 @@ type SegwitSigHashes struct {
     HashOutputs [32]byte
 }
 
+
+
 func extractWitnessPubKeyHash(script []byte) []byte {
 	// A pay-to-witness-pubkey-hash script is of the form:
 	//   OP_0 OP_DATA_20 <20-byte-hash>
@@ -108,8 +122,8 @@ func isWitnessPubKeyHashScript(script []byte) bool {
 }
 
 // Implementated using [BIP143](https://github.com/bitcoin/bips/blob/master/bip-0143.mediawiki) as the reference
-func calcWitnessSignatureHash(subScript []byte, sigHashes *SegwitSigHashes,
-	hashType SigHashType, tx *Transaction, idx int) ([]byte, error) {
+func CalcWitnessSignatureHash(subScript []byte, sigHashes *SegwitSigHashes,
+	hashType SigHashType, tx *transaction.Transaction, idx int) ([]byte, error) {
 	w := bytes.NewBuffer(make([]byte, 0))
     var scratch [8]byte
     // First write out, then encode the transaction's version
@@ -163,7 +177,7 @@ func calcWitnessSignatureHash(subScript []byte, sigHashes *SegwitSigHashes,
         // code is the original script, with all code
         // separators removed, serialized with a var int length
         // prefix.
-        WriteVarBytes(w, subScript)
+        transaction.WriteVarBytes(w, subScript)
     }
 
     // Next, add the input amount, and sequence number of the input
@@ -184,7 +198,7 @@ func calcWitnessSignatureHash(subScript []byte, sigHashes *SegwitSigHashes,
     } else if hashType&sigHashMask == SigHashSingle &&
         idx < len(tx.Vout) {
         tw := bytes.NewBuffer(make([]byte, 0))
-        serializeAndWriteTxOutput(tw, tx.Vout[idx])
+        transaction.SerializeAndWriteTxOutput(tw, tx.Vout[idx])
         h := utils.DoubleHash(tw.Bytes())
         w.Write(h[:])
     } else {

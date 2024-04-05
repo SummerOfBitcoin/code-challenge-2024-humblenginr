@@ -1,11 +1,13 @@
-package transaction
+package ecdsa
 
 import (
 	"errors"
 	"fmt"
 	"math/big"
 
+
 	secp "github.com/decred/dcrd/dcrec/secp256k1/v4"
+	"github.com/humblenginr/btc-miner/validation/sighash"
 )
 
 type Signature struct {
@@ -203,20 +205,11 @@ func parseSig(sigStr []byte, der bool) (*Signature, error) {
 
 }
 
-func checkHashTypeEncoding(hashType SigHashType) error {
-	sigHashType := hashType & ^SigHashAnyOneCanPay
-	if sigHashType < SigHashAll || sigHashType > SigHashSingle {
-		str := fmt.Sprintf("invalid hash type 0x%x", hashType)
-        return errors.New(str)
-	}
-	return nil
-}
 
-
-func parseSigAndPubkey(pkBytes, fullSigBytes []byte) (*secp.PublicKey, *Signature, SigHashType, error) {
-	hashType := SigHashType(fullSigBytes[len(fullSigBytes)-1])
+func ParseSigAndPubkey(pkBytes, fullSigBytes []byte) (*secp.PublicKey, *Signature, sighash.SigHashType, error) {
+	hashType := sighash.SigHashType(fullSigBytes[len(fullSigBytes)-1])
 	sigBytes := fullSigBytes[:len(fullSigBytes)-1]
-	if err := checkHashTypeEncoding(hashType); err != nil {
+	if err := sighash.CheckHashTypeEncoding(hashType); err != nil {
 		return nil, nil, 0, err
 	}
 
