@@ -27,6 +27,7 @@ There are different types of transactions:
 2. p2sh (pay to script hash)
 3. p2wpkh (pay to script hash)
 4. p2wsh (pay to witness script hash)
+5. p2tr
 
 What about multisigs?
 First we will only take these things into account. If a transaction any other type than this, then we will log it and see what it is.

@@ -168,6 +168,18 @@ func (t Transaction) String() string {
     return fmt.Sprintf("Version: %d \nLocktime: %d \nVin: %s \nVout: %s", t.Version , t.Locktime, t.Vin, t.Vout)
 }
 
+
+func (t Transaction) RawHex() []byte {
+w := bytes.NewBuffer(make([]byte, 0, t.SerializeSize()))
+    // For calculating txid, we don't need the witness data
+    err := t.Serialize(true, w)
+   if err != nil {
+      panic(err)
+   }
+    bytes := w.Bytes()
+    return bytes
+}
+
 func (t Transaction) TxHash() []byte {
     w := bytes.NewBuffer(make([]byte, 0, t.SerializeSize()))
     // For calculating txid, we don't need the witness data
