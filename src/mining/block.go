@@ -9,6 +9,7 @@ import (
 	"os"
 
 	txn "github.com/humblenginr/btc-miner/transaction"
+	"github.com/humblenginr/btc-miner/utils"
 )
 
 // Data types taken from: https://developer.bitcoin.org/reference/block_chain.html
@@ -99,6 +100,7 @@ func (b *Block) WriteToFile(filePath string) error {
     for _, txn := range b.Transactions {
         // because the txid of coinbase is already added
         txid := txn.TxHash()
+        txid = utils.ReverseBytes(txid)
         w.WriteString(hex.EncodeToString(txid)+"\n")
     }
     w.Flush()
