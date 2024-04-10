@@ -2,6 +2,7 @@ package mining
 
 import (
 	"encoding/hex"
+	"math"
 
 	txn "github.com/humblenginr/btc-miner/transaction"
 	"github.com/humblenginr/btc-miner/utils"
@@ -26,7 +27,7 @@ func NewCoinbaseTransaction(fees int) txn.Transaction {
     // push 3 bytes, 951a06 - which is the block height
     vin.ScriptSig = "03951a06"
     vin.ScriptSigAsm = "PUSH_3 951a06"
-    vin.Sequence = 0
+    vin.Sequence = math.MaxUint32
     t.Vin = append(t.Vin, vin)
 
     vout := txn.Vout{}

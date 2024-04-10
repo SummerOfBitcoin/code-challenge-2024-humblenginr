@@ -81,7 +81,7 @@ func (s *rollingMerkleTreeStore) calcMerkleRoot(adds []*transaction.Transaction,
 		// transaction's witness data within the digest.  Additionally,
 		// the coinbase's wtxid is all zeroes.
 		switch {
-		case witness && i == 0:
+		case witness && adds[i].Vin[0].IsCoinbase:
 			var zeroHash [32]byte
 			s.add(zeroHash)
 		case witness:

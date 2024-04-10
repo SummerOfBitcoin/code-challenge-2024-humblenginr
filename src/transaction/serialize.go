@@ -184,7 +184,7 @@ func (t *Transaction) Serialize(includeWitness bool, w io.Writer) ( error) {
                 }
                 witness = append(witness, byteArray)
             }
-			err = writeTxWitness(w, t.Version, witness)
+			err = writeTxWitness(w, witness)
 			if err != nil {
 				return  err
 			}
@@ -197,7 +197,7 @@ func (t *Transaction) Serialize(includeWitness bool, w io.Writer) ( error) {
     return nil
 }
 
-func writeTxWitness(w io.Writer, version int32, wit [][]byte) error {
+func writeTxWitness(w io.Writer, wit [][]byte) error {
 	err := WriteVarInt(w, uint64(len(wit)))
 	if err != nil {
 		return err
