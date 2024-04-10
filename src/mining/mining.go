@@ -2,6 +2,7 @@ package mining
 
 import (
 	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -14,6 +15,17 @@ import (
 
 var BlockVersion int32 = 0x00000004
 var targetDifficultyHexString = "0000ffff00000000000000000000000000000000000000000000000000000000"
+var prevBlockHash = "1cc89d151ecc14e3c323fd538f8259c3e6a5ecfeb467395f651de50818a50000"
+
+func findValidPrevBlockHash(nBits uint32) [32]byte {
+    for {
+        hash := utils.RandomSha256()
+        if HashToBig(&hash).Cmp(NbitsToTarget(nBits)) <= 0 {
+				return hash
+		}
+
+    }
+}
 
 func GetCandidateBlock(txns []*txn.Transaction, hasWitness bool) Block {
     tarDif := new(big.Int)
@@ -35,7 +47,9 @@ func GetCandidateBlock(txns []*txn.Transaction, hasWitness bool) Block {
     candidateBlock.Coinbase = cb
 
     // header
-    header := NewBlockHeader(BlockVersion, utils.RandomSha256(), CalcMerkleRoot(blockTxns, false), time.Now().Unix(),TargetToNbits(tarDif), 0)
+    nBits := TargetToNbits(tarDif)
+    prevBH,_ := hex.DecodeString(prevBlockHash)
+    header := NewBlockHeader(BlockVersion, *utils.NewHash(prevBH), CalcMerkleRoot(blockTxns, false), time.Now().Unix(),nBits, 0)
     candidateBlock.BlockHeader = header
 
     // transactions
