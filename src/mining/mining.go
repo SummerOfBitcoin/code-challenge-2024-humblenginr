@@ -58,8 +58,8 @@ func MineBlock(candidateBlock Block, outputFilePath string) error {
 
 func findNonce(candidateBlock *Block) uint32 {
     // serialized block will be of 80 byte
-    w := bytes.NewBuffer(make([]byte, 0, 80))
     for {
+        w := bytes.NewBuffer(make([]byte, 0, 84))
         header := candidateBlock.BlockHeader
         nBits := candidateBlock.BlockHeader.Bits
         nonce := GetRandomNonce()
