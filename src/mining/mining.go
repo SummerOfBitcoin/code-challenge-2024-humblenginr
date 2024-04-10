@@ -72,8 +72,8 @@ func findNonce(candidateBlock Block) uint32 {
         hash := [32]byte(utils.DoubleHash(w.Bytes()))
 
 
-        fmt.Printf("Target Value: %d\n", NbitsToTarget(candidateBlock.BlockHeader.Bits))
-        fmt.Printf("Hash Value:   %d\n", HashToBig(&hash))
+        // fmt.Printf("Target Value: %d\n", NbitsToTarget(candidateBlock.BlockHeader.Bits))
+        // fmt.Printf("Hash Value:   %d\n", HashToBig(&hash))
 
         // compare with difficulty target
         if HashToBig(&hash).Cmp(NbitsToTarget(nBits)) <= 0 {
