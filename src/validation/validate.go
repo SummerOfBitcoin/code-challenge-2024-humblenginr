@@ -12,7 +12,6 @@ import (
 	"github.com/humblenginr/btc-miner/validation/schnorr"
 )
 
-
 func Validate( tx transaction.Transaction , trIdx int) bool {
     // Get transaction type
     i := tx.Vin[trIdx]
@@ -31,8 +30,9 @@ func Validate( tx transaction.Transaction , trIdx int) bool {
        return validateP2WPKH(tx, trIdx) 
     case transaction.P2TR:
        return validateP2TR(tx, trIdx) 
+    default:
+        return false
     }
-    return true
 } 
 
 func validateP2PKH(tx transaction.Transaction, trIdx int) bool {
@@ -120,14 +120,14 @@ func validateP2TR( tx transaction.Transaction, trIdx int ) bool {
         }
         s,_ := hex.DecodeString(witness[len(witness)-2])
         if(s[33] != 0xac) {
-            fmt.Printf("Witness script: %x\n", s)
+            // fmt.Printf("Witness script: %x\n", s)
             fmt.Printf("WARN: Skipping the transaction input since it's witness script is unrecognisable: %s\n", txIn)
             fmt.Printf("Expected 0xac, got: %x\n", s[33])
             return false
         }
         // remove annex from the witness array, if found
         witness,_ = RemoveAnnexFromWitness(witness)
-        fmt.Printf("INFO: Witness length: %d\n", len(witness))
+        // fmt.Printf("INFO: Witness length: %d\n", len(witness))
         // parse the control block
         cb_bytes,_ := hex.DecodeString(witness[len(witness)-1])
         c, err := ParseControlBlock(cb_bytes)
@@ -156,13 +156,13 @@ func validateP2TR( tx transaction.Transaction, trIdx int ) bool {
         }
         // calculate sighash
         tapLeafHash := NewTapLeaf(0xc0,s).TapHash()
-        fmt.Printf("p: %x, q: %x, k: %x\n",cb_bytes[1:33],q, utils.ReverseBytes(tapLeafHash[:]))
+        // fmt.Printf("p: %x, q: %x, k: %x\n",cb_bytes[1:33],q, utils.ReverseBytes(tapLeafHash[:]))
 
         sighash, err := sighash.CalcTaprootSignatureHash(&sighashes, hashtype,&tx, trIdx,utils.ReverseBytes(tapLeafHash[:]), annexBytes)
         if err != nil {
             fmt.Println("Cannot calculate signature hash : "+ err.Error())
         }
-        fmt.Printf("Schnorr Sighash: %x\n", sighash)
+        // fmt.Printf("Schnorr Sighash: %x\n", sighash)
         serializedPubkey := schnorr.SerializePubKey(pk)
         return schnorr.Verify(sig, sighash, serializedPubkey)
     }
@@ -175,14 +175,13 @@ func validateP2WPKH( tx transaction.Transaction, trIdx int ) bool {
     // 1. Parse public key and signature
     pk, sig, hashtype, err :=  ecdsa.ParseSigAndPubkey(pubkey, sigBytes)
     if err != nil {
-        panic("Cannot parse signatuer and pub key: "+ err.Error())
+        panic("Cannot parse signature and pub key: "+ err.Error())
         }
     subscript := txIn.PrevOut.ScriptPubKey
     subscriptBytes, _ := hex.DecodeString(subscript)
     // 2. Calculate signature hash
     // for v0 segwit, we use double hash, whereas for v1 segwit (taproot), we just use single hash 
     cache := sighash.SegwitSigHashes{HashPrevouts: [32]byte(utils.Hash(tx.CalcHashPrevOuts()[:])), HashSequence: [32]byte(utils.Hash(tx.CalcHashSequence()[:])), HashOutputs: [32]byte(utils.Hash(tx.CalcHashOutputs()[:]))}
-    fmt.Println("Hashtype: ", hashtype)
     sighash, err := sighash.CalcWitnessSignatureHash(subscriptBytes, &cache, hashtype,&tx, trIdx)
     if err != nil {
         panic("Cannot calculate signature hash : "+ err.Error())

@@ -125,7 +125,7 @@ func CalcTaprootSignatureHash(sigHashes *TaprootSigHashes, hType SigHashType,
         opts = newKeyPathSpendingTaprootSighashOptions(annex)
     } else {
         opts = newScriptSpendingTaprootSighashOptions(leafHash,annex)
-        fmt.Printf("INFO: Leafhash is not nil, opts: %v\n", opts)
+        // fmt.Printf("INFO: Leafhash is not nil, opts: %v\n", opts)
     }
 	// If a valid sighash type isn't passed in, then we'll exit early.
 	if !isValidTaprootSigHash(hType) {
@@ -160,7 +160,7 @@ func CalcTaprootSignatureHash(sigHashes *TaprootSigHashes, hType SigHashType,
 	// The spend type is (ext_flag*2) + annex_present (BIP341)
 	input := tx.Vin[idx]
 	witnessHasAnnex := opts.annexHash != nil
-    fmt.Printf("witnessHasAnnex: %v\n", opts.annexHash)
+    // fmt.Printf("witnessHasAnnex: %v\n", opts.annexHash)
 	spendType := byte(opts.extFlag) * 2
 	if witnessHasAnnex {
 		spendType += 1
@@ -216,7 +216,7 @@ func CalcTaprootSignatureHash(sigHashes *TaprootSigHashes, hType SigHashType,
 	if err := opts.writeDigestExtensions(&sigMsg); err != nil {
 		return nil, err
 	}
-    fmt.Printf("Signature hash before hashing: %x\n", sigMsg.Bytes())
+    // fmt.Printf("Signature hash before hashing: %x\n", sigMsg.Bytes())
     // done according to BIP341 - https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki
 	sigHash := utils.TaggedHash(utils.TagTapSighash, sigMsg.Bytes())
 	return sigHash[:], nil

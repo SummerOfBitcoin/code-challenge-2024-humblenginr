@@ -23,11 +23,11 @@ Programming language to use: Golang
 ### Validation
 
 There are different types of transactions:
-1. p2pkh (pay to public key hash)
-2. p2sh (pay to script hash)
-3. p2wpkh (pay to script hash)
+1. p2pkh (pay to public key hash) [x]
+2. p2sh (pay to script hash) []
+3. p2wpkh (pay to script hash) [x]
 4. p2wsh (pay to witness script hash)
-5. p2tr
+5. p2tr [x]
 
 What about multisigs?
 First we will only take these things into account. If a transaction any other type than this, then we will log it and see what it is.
@@ -92,12 +92,19 @@ INPUT:
 
 We will start with these validations, and run the tests, and then based on the results we can add more rules.
 
-
 ### Assigning fee/size 
 Here we basically have to calculate the transaction fees for the given transaction, and then store them in a map that has transaction
 id as the key and the (fee/size) as the value.
+What do we keep as the size? Serialized transaction size(with or without witness?)
 
-
+Let us first mine a block and see if our valid txns are actually valid
 ## Coinbase transaction
 
 ## Mining a block
+We need to do the following things:
+1. Select a list of transactions to put in the block
+2. Create a candidate block
+3. Create coinbase transaction
+4. Calculate the Merkle root
+5. Find the nonce
+

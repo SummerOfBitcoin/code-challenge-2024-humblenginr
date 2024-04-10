@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/humblenginr/btc-miner/utils"
+	//"github.com/humblenginr/btc-miner/validation"
 )
 
 type ScriptPubKeyType string
@@ -117,8 +118,21 @@ func (t *Transaction) HasWitness() bool {
 	return false
 }
 
-// SerializeSize returns the serialized size of the transaction without accounting
-// for any witness data.
+
+func (tx *Transaction) SerializeSizeWithWitness() int {
+    witnessSize := 0
+    for _, t := range tx.Vin {
+        witnessByteArray := make([][]byte, 0)
+        for _, w := range t.Witness{
+            witness,_ := hex.DecodeString(w)
+            witnessByteArray = append(witnessByteArray, witness)
+        }
+        witnessSize += SerializeWitnessSize(witnessByteArray)
+    }
+    return tx.SerializeSize() + witnessSize
+}
+
+// SerializeSize returns the serialized size of the transaction without accounting for any witness data.
 func (tx *Transaction) SerializeSize() int {
 	// Version 4 bytes + LockTime 4 bytes + Serialized varint size for the
 	// number of transaction inputs and outputs.
@@ -169,10 +183,10 @@ func (t Transaction) String() string {
 }
 
 
+// RawHex gives the serialized transaction with witness data if any in bytes
 func (t Transaction) RawHex() []byte {
-w := bytes.NewBuffer(make([]byte, 0, t.SerializeSize()))
-    // For calculating txid, we don't need the witness data
-    err := t.Serialize(true, w)
+   w := bytes.NewBuffer(make([]byte, 0, t.SerializeSize()))
+   err := t.Serialize(true, w)
    if err != nil {
       panic(err)
    }
@@ -184,6 +198,18 @@ func (t Transaction) TxHash() []byte {
     w := bytes.NewBuffer(make([]byte, 0, t.SerializeSize()))
     // For calculating txid, we don't need the witness data
     err := t.Serialize(false, w)
+   if err != nil {
+      panic(err)
+   }
+    bytes := w.Bytes()
+    txhash := utils.DoubleHash(bytes)
+    return txhash
+}
+
+func (t Transaction) WitnessHash() []byte {
+    w := bytes.NewBuffer(make([]byte, 0, t.SerializeSize()))
+    // For calculating txid, we don't need the witness data
+    err := t.Serialize(true, w)
    if err != nil {
       panic(err)
    }

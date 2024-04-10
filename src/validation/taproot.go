@@ -250,10 +250,13 @@ func VerifyTaprootLeafCommitment(controlBlock *ControlBlock,
 	return nil
 }
 
+// For the time being we assume that we do not have any witnessScripts with OpSuccess
 func ScriptHasOpSuccess(witnessScript []byte) bool {
     // TODO: implement this
 	return false
 }
+
+// For the time being we assume that we do not have any witnessScript always parses successfully
 func checkScriptParses(witnessScript []byte) bool {
     // TODO: implement this
     return true
