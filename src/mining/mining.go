@@ -16,25 +16,30 @@ var BlockVersion int32 = 0x00000004
 var targetDifficultyHexString = "0000ffff00000000000000000000000000000000000000000000000000000000"
 
 func GetCandidateBlock(txns []*txn.Transaction, hasWitness bool) Block {
-	tarDif := new(big.Int)
-	tarDif.SetString(targetDifficultyHexString, 16)
-    fmt.Printf("TargetDifficulty: %064x\n", tarDif)
+    tarDif := new(big.Int)
+    fmt.Sscanf(targetDifficultyHexString, "%064x", tarDif)
     candidateBlock := Block{}
+    
+    var blockTxns []*txn.Transaction
 
     // coinbase transaction
     cb := NewCoinbaseTransaction(calculateFees(txns))
-    txns = append(txns, &cb)
+    blockTxns = append(blockTxns, &cb)
+    for _, t := range txns {
+        blockTxns = append(blockTxns, t)
+    }
+
     if(hasWitness){
-        AddWitnessCommitment(&cb, txns)
+        AddWitnessCommitment(&cb, blockTxns)
     }
     candidateBlock.Coinbase = cb
 
     // header
-    header := NewBlockHeader(BlockVersion, utils.RandomSha256(), CalcMerkleRoot(txns, false), time.Now().Unix(),TargetToNbits(tarDif), 0)
+    header := NewBlockHeader(BlockVersion, utils.RandomSha256(), CalcMerkleRoot(blockTxns, false), time.Now().Unix(),TargetToNbits(tarDif), 0)
     candidateBlock.BlockHeader = header
 
     // transactions
-    for _, t := range txns {
+    for _, t := range blockTxns {
         candidateBlock.AddTransaction(*t)
     }
 
@@ -42,8 +47,7 @@ func GetCandidateBlock(txns []*txn.Transaction, hasWitness bool) Block {
 }
 
 func MineBlock(candidateBlock Block, outputFilePath string) error {
-    nonce := findNonce(candidateBlock)
-    candidateBlock.BlockHeader.Nonce = nonce
+    nonce := findNonce(&candidateBlock)
     fmt.Printf("Found nonce: %d", nonce)
     err := candidateBlock.WriteToFile(outputFilePath)
     if err != nil {
@@ -52,16 +56,16 @@ func MineBlock(candidateBlock Block, outputFilePath string) error {
     return nil
 }
 
-func findNonce(candidateBlock Block) uint32 {
+func findNonce(candidateBlock *Block) uint32 {
     // serialized block will be of 80 byte
     w := bytes.NewBuffer(make([]byte, 0, 80))
     for {
         header := candidateBlock.BlockHeader
         nBits := candidateBlock.BlockHeader.Bits
         nonce := GetRandomNonce()
+        candidateBlock.BlockHeader.Nonce = nonce
 
         // hash the block header
-        // TODO: Properly calculate the capacity
         err := header.Serialize(w)
         if err != nil {
             fmt.Printf("WARN: Could not serialize block header: %v", err)

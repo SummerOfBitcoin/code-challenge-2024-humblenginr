@@ -105,6 +105,8 @@ func SelectTransactionsFromPaths(validTxnPaths []string) []*txn.Transaction {
     return txnSlice
 }
 
+// Block Hash does not meet difficulty target
+
 func main() {
     UpdateValidTxns()
     txns := SelectTransactionsFromPaths(TemporaryValidTxns)
