@@ -60,10 +60,11 @@ func findNonce(candidateBlock *Block) uint32 {
     // serialized block will be of 80 byte
     for {
         w := bytes.NewBuffer(make([]byte, 0, 84))
-        header := candidateBlock.BlockHeader
-        nBits := candidateBlock.BlockHeader.Bits
         nonce := GetRandomNonce()
         candidateBlock.BlockHeader.Nonce = nonce
+
+        header := candidateBlock.BlockHeader
+        nBits := candidateBlock.BlockHeader.Bits
 
         // hash the block header
         err := header.Serialize(w)
@@ -72,11 +73,12 @@ func findNonce(candidateBlock *Block) uint32 {
             // else this might go in infinity loop
             panic(err)
         }
-        hash := [32]byte(utils.DoubleHash(w.Bytes()))
 
+        hash := utils.DoubleHashRaw(w.Bytes())
 
+        fmt.Printf("Hash:   %x\n", hash)
+        fmt.Printf("Hash Value:   %d\n", HashToBig(&hash))
         // fmt.Printf("Target Value: %d\n", NbitsToTarget(candidateBlock.BlockHeader.Bits))
-        // fmt.Printf("Hash Value:   %d\n", HashToBig(&hash))
 
         // compare with difficulty target
         if HashToBig(&hash).Cmp(NbitsToTarget(nBits)) <= 0 {

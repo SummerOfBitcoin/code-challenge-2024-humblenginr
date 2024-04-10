@@ -13,6 +13,11 @@ func NewHash(newHash []byte) (*[32]byte) {
 	return &sh
 }
 
+func DoubleHashRaw(b []byte) [32]byte{
+	first := sha256.Sum256(b)
+	return sha256.Sum256(first[:])
+}
+
 func DoubleHash(b []byte) []byte {
     return Hash(Hash(b))
 }
