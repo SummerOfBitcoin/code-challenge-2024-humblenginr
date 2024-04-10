@@ -100,6 +100,8 @@ func (b *Block) WriteToFile(filePath string) error {
 
     // Txid of rest of the transactions
     for _, txn := range b.Transactions {
+        // because the txid of coinbase is already added
+        if(txn.Vin[0].IsCoinbase){continue}
         txid := txn.TxHash()
         w.WriteString(hex.EncodeToString(txid)+"\n")
     }

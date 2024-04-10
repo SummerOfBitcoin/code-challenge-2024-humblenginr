@@ -18,18 +18,20 @@ var targetDifficultyHexString = "0000ffff000000000000000000000000000000000000000
 func GetCandidateBlock(txns []*txn.Transaction, hasWitness bool) Block {
 	tarDif := new(big.Int)
 	tarDif.SetString(targetDifficultyHexString, 16)
+    fmt.Printf("TargetDifficulty: %064x\n", tarDif)
     candidateBlock := Block{}
-
-    // header
-    header := NewBlockHeader(BlockVersion, utils.RandomSha256(), CalcMerkleRoot(txns, false), time.Now().Unix(),TargetToNbits(tarDif), 0)
-    candidateBlock.BlockHeader = header
 
     // coinbase transaction
     cb := NewCoinbaseTransaction(calculateFees(txns))
+    txns = append(txns, &cb)
     if(hasWitness){
         AddWitnessCommitment(&cb, txns)
     }
     candidateBlock.Coinbase = cb
+
+    // header
+    header := NewBlockHeader(BlockVersion, utils.RandomSha256(), CalcMerkleRoot(txns, false), time.Now().Unix(),TargetToNbits(tarDif), 0)
+    candidateBlock.BlockHeader = header
 
     // transactions
     for _, t := range txns {
@@ -53,13 +55,10 @@ func MineBlock(candidateBlock Block, outputFilePath string) error {
 func findNonce(candidateBlock Block) uint32 {
     // serialized block will be of 80 byte
     w := bytes.NewBuffer(make([]byte, 0, 80))
-
-     
     for {
-        nonce := GetRandomNonce()
-
         header := candidateBlock.BlockHeader
         nBits := candidateBlock.BlockHeader.Bits
+        nonce := GetRandomNonce()
 
         // hash the block header
         // TODO: Properly calculate the capacity
