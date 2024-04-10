@@ -50,6 +50,7 @@ func AddWitnessCommitment(coinbase *txn.Transaction, txns []*txn.Transaction) er
 	copy(witnessPreimage[:32], witnessMerkleRoot[:])
 	copy(witnessPreimage[32:], witnessNonce[:])
     witnessCommitment := utils.DoubleHashRaw(witnessPreimage[:])
+    witnessCommitment = [32]byte(utils.ReverseBytes(witnessCommitment[:]))
     witnessScript := []byte{
         // OP_RETURN
 		0x6a,

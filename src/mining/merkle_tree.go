@@ -85,9 +85,9 @@ func (s *rollingMerkleTreeStore) calcMerkleRoot(adds []*transaction.Transaction,
 			var zeroHash [32]byte
 			s.add(zeroHash)
 		case witness:
-			s.add([32]byte(utils.ReverseBytes(adds[i].WitnessHash())))
+			s.add([32]byte(adds[i].WitnessHash()))
 		default:
-			s.add([32]byte(utils.ReverseBytes(adds[i].TxHash())))
+			s.add([32]byte(adds[i].TxHash()))
 		}
 	}
 
