@@ -48,18 +48,18 @@ func AddWitnessCommitment(coinbase *txn.Transaction, txns []*txn.Transaction) er
     var witnessPreimage [64]byte
 	copy(witnessPreimage[:32], witnessMerkleRoot[:])
 	copy(witnessPreimage[32:], witnessNonce[:])
-    witnessCommitment := utils.DoubleHash(witnessPreimage[:])
+    witnessCommitment := utils.DoubleHashRaw(witnessPreimage[:])
     witnessScript := []byte{
         // OP_RETURN
 		0x6a,
         // OP_DATA36
-		0x36,
+		0x24,
 		0xaa,
 		0x21,
 		0xa9,
 		0xed,
 	}
-    witnessScript = append(witnessScript, witnessCommitment...)
+    witnessScript = append(witnessScript, witnessCommitment[:]...)
     witnessOut := txn.Vout{}
     witnessOut.Value = 0
     witnessOut.ScriptPubKey = hex.EncodeToString(witnessScript)
