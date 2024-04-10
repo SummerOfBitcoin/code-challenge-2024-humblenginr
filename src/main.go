@@ -38,6 +38,7 @@ func LogDetailsAboutTx(tx txn.Transaction){
 
 func UpdateValidTxns() {
     os.RemoveAll(ValidTxnsDirPath)
+    validTxnsCount := 0 
     files, err := os.ReadDir(MempoolDirPath)
     if err != nil {
         panic(err)
@@ -58,12 +59,16 @@ func UpdateValidTxns() {
         if(isValid){
             fileName := fmt.Sprintf("%s/%s", ValidTxnsDirPath, f.Name())
             os.WriteFile(fileName, byteResult, fs.FileMode(ValidTxnsDirPerm))
+            validTxnsCount += 1
+        }
+        if(validTxnsCount > 20){
+            break
         }
     }
 }
 
 func main() {
-    // UpdateValidTxns()
+    UpdateValidTxns()
     txns := mining.SelectTransactionsFromFolder(ValidTxnsDirPath)
     candidateBlock := mining.GetCandidateBlock(txns, true)
     mining.MineBlock(candidateBlock, OutputFilePath)
