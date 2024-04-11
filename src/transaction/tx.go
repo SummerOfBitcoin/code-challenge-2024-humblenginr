@@ -175,9 +175,34 @@ func (t Transaction) getFeeByWeight() float64 {
     return float64(t.GetFees())/float64(t.GetWeight())
 }
 
+func (t Transaction) weightCalc(witness bool) int {
+    weight := 8
+    if(witness) {weight+=2}
+    weight += VarIntSerializeSize(uint64(len(t.Vin)))
+    weight += VarIntSerializeSize(uint64(len(t.Vout)))
+    for _, in := range t.Vin {
+        weight += 40
+        weight += VarIntSerializeSize(uint64(len(in.ScriptSig)/2))
+    }
+    for _, out := range t.Vout {
+        weight += 8
+        weight += VarIntSerializeSize(uint64(len(out.ScriptPubKey)/2))
+    }
+    if(witness){
+        for _, in := range t.Vin {
+            weight += VarIntSerializeSize(uint64(len(in.Witness)))
+            for _, w := range in.Witness {
+                weight += VarIntSerializeSize(uint64(len(w)/2))
+            }
+        }
+    }
+    return weight
+}
+
 func (t Transaction) GetWeight() int {
-	baseSize := t.SerializeSize()
-	totalSize := t.SerializeSizeWithWitness()
+
+	baseSize := t.weightCalc(false)
+	totalSize := t.weightCalc(true)
 
 	return (baseSize * 3) + totalSize
 }

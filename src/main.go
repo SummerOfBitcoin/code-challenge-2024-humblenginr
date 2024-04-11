@@ -63,20 +63,15 @@ func UpdateValidTxns() {
     }
 }
 
-type Item txn.Transaction
 
-func (i Item) HigherPriorityThan(other priorityQueue.Interface) bool {
-	return i.Priority < other.(Item).Priority
-}
 
-func GetValidTxns() *priorityQueue.Queue {
+func GetTxnsQ() *priorityQueue.Queue {
     pq := priorityQueue.New()
     files, err := os.ReadDir(MempoolDirPath)
     if err != nil {
         panic(err)
     }
     for _, f := range files {
-
         var transaction txn.Transaction
         txnPath := fmt.Sprintf("%s/%s", MempoolDirPath, f.Name())
         byteResult, _ := os.ReadFile(txnPath)
@@ -91,25 +86,15 @@ func GetValidTxns() *priorityQueue.Queue {
         }
         if(isValid && !transaction.Vin[0].IsCoinbase){
             transaction.UpdatePriority()
-            pq.Push(Item(transaction))
+            pq.Push(mining.Item(transaction))
         }
     }
     return pq
 }
 
-func GetTop(pq *priorityQueue.Queue) []*txn.Transaction {
-    txns := make([]*txn.Transaction, 0)
-
-    for range 1700 {
-        t := txn.Transaction((pq.Pop()).(Item))
-        txns = append(txns, &t)
-    }
-    return txns
-}
 
 func main() {
-    pq := GetValidTxns()
-    txns := GetTop(pq)
-    candidateBlock := mining.GetCandidateBlock(txns, true)
+    pq := GetTxnsQ()
+    candidateBlock := mining.GetCandidateBlock(pq, true)
     mining.MineBlock(candidateBlock, OutputFilePath)
 }

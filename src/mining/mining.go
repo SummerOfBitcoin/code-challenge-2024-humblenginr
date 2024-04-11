@@ -8,6 +8,7 @@ import (
 	"time"
 
 	txn "github.com/humblenginr/btc-miner/transaction"
+	"github.com/x1m3/priorityQueue"
 	"github.com/humblenginr/btc-miner/utils"
 )
 
@@ -25,8 +26,31 @@ func findValidPrevBlockHash(nBits uint32) [32]byte {
     }
 }
 
-func GetCandidateBlock(txns []*txn.Transaction, hasWitness bool) Block {
+type Item txn.Transaction
+
+func (i Item) HigherPriorityThan(other priorityQueue.Interface) bool {
+	return i.Priority < other.(Item).Priority
+}
+
+var MaxBlockWeight = 4000000 - 100 // 100 is a buffer amount
+
+func GetCandidateBlock(txnPq *priorityQueue.Queue, hasWitness bool) Block {
     tarDif := new(big.Int)
+    txns := make([]*txn.Transaction, 0)
+
+    totalWeight := 0
+
+    for {
+        item := txnPq.Pop()
+        if (item == nil) { break }
+        tx := txn.Transaction((item).(Item))
+        fmt.Printf("TOTw8: %v \n\n", totalWeight)
+        if(tx.GetWeight() + totalWeight <= MaxBlockWeight) {
+            txns = append(txns, &tx)
+            totalWeight += tx.GetWeight()
+        } else {break}
+    }
+
     fmt.Sscanf(targetDifficultyHexString, "%064x", tarDif)
     candidateBlock := Block{}
     
