@@ -86,6 +86,7 @@ type Transaction struct {
     Locktime uint32 `json:"locktime"`
     Vin []Vin `json:"vin"`
     Vout []Vout `json:"vout"`
+    Priority int
 }
 
 
@@ -165,7 +166,12 @@ func (tx *Transaction) SerializeSize() int {
 	return n
 }
 
-func (t Transaction) GetFeeByWeight() float64 {
+
+func (t *Transaction) UpdatePriority() {
+    t.Priority = int(t.getFeeByWeight()*1000000)
+}
+
+func (t Transaction) getFeeByWeight() float64 {
     return float64(t.GetFees())/float64(t.GetWeight())
 }
 

@@ -1,5 +1,4 @@
 package validation
-
 import (
 	"encoding/hex"
 	"fmt"
@@ -115,13 +114,13 @@ func validateP2TR( tx transaction.Transaction, trIdx int ) bool {
     } else {
         // script path spending
         if(len(witness) != 3){
-            fmt.Printf("WARN: Rejecting unknown transaction. We don't yet know how to validate this transaction input: %s\n", txIn)
+            // fmt.Printf("WARN: Rejecting unknown transaction. We don't yet know how to validate this transaction input: %s\n", txIn)
             return false
         }
         s,_ := hex.DecodeString(witness[len(witness)-2])
         if(s[33] != 0xac) {
             // fmt.Printf("Witness script: %x\n", s)
-            fmt.Printf("WARN: Skipping the transaction input since it's witness script is unrecognisable: %s\n", txIn)
+            // fmt.Printf("WARN: Skipping the transaction input since it's witness script is unrecognisable: %s\n", txIn)
             fmt.Printf("Expected 0xac, got: %x\n", s[33])
             return false
         }

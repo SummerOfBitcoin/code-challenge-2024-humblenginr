@@ -1,2 +1,4 @@
 github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 h1:8UrgZ3GkP4i/CLijOJx79Yu+etlyjdBU4sfcs2WYQMs=
 github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0/go.mod h1:v57UDF4pDQJcEfFUCRop3lJL149eHGSe9Jvczhzjo/0=
+github.com/x1m3/priorityQueue v0.0.0-20180318192439-29f82ba34a27 h1:Vs8IO+Vh/ALHzqiqR8XZzzNOmfjqXy7f2mUNMjtfxnw=
+github.com/x1m3/priorityQueue v0.0.0-20180318192439-29f82ba34a27/go.mod h1:SwEOkKTq5Jvyl9F5PdTA6Xa63O8RURd0TdO1C83aSPo=
