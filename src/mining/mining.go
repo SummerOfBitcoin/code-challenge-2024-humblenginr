@@ -114,7 +114,6 @@ func calculateFees(txns []*txn.Transaction) int {
 }
 
 func SelectTransactionsFromFolder(validTxnsFolderPath string) []*txn.Transaction {
-    // for now we will just select first 15 transactions
     files, err := os.ReadDir(validTxnsFolderPath)
     if err != nil {
         panic(err)

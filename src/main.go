@@ -61,7 +61,7 @@ func UpdateValidTxns() {
             os.WriteFile(fileName, byteResult, fs.FileMode(ValidTxnsDirPerm))
             validTxnsCount += 1
         }
-        if(validTxnsCount > 20){
+        if(validTxnsCount > 16){
             break
         }
     }
