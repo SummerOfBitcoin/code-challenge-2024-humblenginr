@@ -49,7 +49,11 @@ func GetCandidateBlock(txns []*txn.Transaction, hasWitness bool) Block {
     // header
     nBits := TargetToNbits(tarDif)
     prevBH,_ := hex.DecodeString(prevBlockHash)
-    header := NewBlockHeader(BlockVersion, *utils.NewHash(prevBH), CalcMerkleRoot(blockTxns, false), time.Now().Unix(),nBits, 0)
+    txids := make([][32]byte, 0)
+    for _, t := range blockTxns {
+        txids = append(txids, [32]byte(utils.ReverseBytes(t.TxHash())))
+    }
+    header := NewBlockHeader(BlockVersion, *utils.NewHash(prevBH), GenerateMerkleTreeRoot(txids), time.Now().Unix(),nBits, 0)
     candidateBlock.BlockHeader = header
 
     // transactions
