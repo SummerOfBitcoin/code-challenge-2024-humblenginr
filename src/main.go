@@ -70,6 +70,9 @@ func UpdateValidTxns() {
 var TemporaryValidTxn =  []string{
     "001035505afbf143e51bd667099190943a38eee20092bb691e72eaa44992b2f7.json",
     "000cb561188c762c81f76976f816829424e2af9e0e491c617b7bf41038df3d35.json",
+    "0018c221bca3da35128baabe412a14c95b6864b2e6f7f7a8ffdd8eb0923dec49.json",
+    "001e296ba3feddda174e62df57506861823b0831af983364d2c1808779b443f7.json", 
+    "0022a52ad27796a1a2d9eddd6f4b055c097b51ad7cb8f000fe0d78b26cb71639.json",
 }
 
 var TemporaryValidTxns =  []string{
