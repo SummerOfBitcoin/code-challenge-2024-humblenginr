@@ -66,7 +66,7 @@ func UpdateValidTxns() {
 type Item txn.Transaction
 
 func (i Item) HigherPriorityThan(other priorityQueue.Interface) bool {
-	return i.Priority > other.(Item).Priority
+	return i.Priority < other.(Item).Priority
 }
 
 func GetValidTxns() *priorityQueue.Queue {
