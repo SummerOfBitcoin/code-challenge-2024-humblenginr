@@ -215,7 +215,7 @@ func (t Transaction) WitnessHash() []byte {
    }
     bytes := w.Bytes()
     txhash := utils.DoubleHash(bytes)
-    return utils.ReverseBytes(txhash)
+    return txhash
 }
 
 func (input Vin) GetScriptType() ScriptPubKeyType {

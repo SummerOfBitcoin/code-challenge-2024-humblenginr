@@ -2,6 +2,7 @@ package mining
 
 import (
 	"encoding/hex"
+	"fmt"
 	"math"
 
 	txn "github.com/humblenginr/btc-miner/transaction"
@@ -51,6 +52,7 @@ func AddWitnessCommitmentX(coinbaseTx *txn.Transaction,
 
 	var witnessNonce [32]byte
 	coinbaseTx.Vin[0].Witness = []string{hex.EncodeToString(witnessNonce[:])} 
+    fmt.Printf("\n\nSerialized coinbase tx: %x\n\n", blockTxns[0].RawHex())
 
 	// Next, obtain the merkle root of a tree which consists of the
 	// wtxid of all transactions in the block. The coinbase

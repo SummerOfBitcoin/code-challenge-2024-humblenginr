@@ -113,7 +113,7 @@ func SelectTransactionsFromPaths(validTxnPaths []string) []*txn.Transaction {
 
 func main() {
     UpdateValidTxns()
-    txns := SelectTransactionsFromPaths(TemporaryValidTxn)
+    txns := SelectTransactionsFromPaths([]string{})
     candidateBlock := mining.GetCandidateBlock(txns, true)
     mining.MineBlock(candidateBlock, OutputFilePath)
 }
