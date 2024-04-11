@@ -123,7 +123,7 @@ func SelectTransactionsFromFolder(validTxnsFolderPath string) []*txn.Transaction
 
     for i, f := range files {
         var transaction txn.Transaction
-        if(i == 16) {
+        if(i == 100) {
             return txnSlice
         }
         txnPath := fmt.Sprintf("%s/%s", validTxnsFolderPath, f.Name())
