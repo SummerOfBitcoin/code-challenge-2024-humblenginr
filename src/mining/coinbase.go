@@ -57,9 +57,9 @@ func AddWitnessCommitmentX(coinbaseTx *txn.Transaction,
 	// transaction will have a special wtxid of all zeroes.
     var zeroHash [32]byte
     wtxids := make([][32]byte, 0)
-    for i, t := range blockTxns {
+    for _, t := range blockTxns {
         // coinbase
-        if(i == 0){
+        if(t.Vin[0].IsCoinbase){
             wtxids = append(wtxids, zeroHash)
         } else {
             wtxids = append(wtxids, [32]byte(utils.ReverseBytes(t.WitnessHash())))
@@ -79,7 +79,7 @@ func AddWitnessCommitmentX(coinbaseTx *txn.Transaction,
 	// generated, the witness script for the output is: OP_RETURN
 	// OP_DATA_36 {0xaa21a9ed || witnessCommitment}. The leading
 	// prefix is referred to as the "witness magic bytes".
-    witnessCommitment := utils.DoubleHashRaw(witnessPreimage[:])
+    witnessCommitment := utils.DoubleHash(witnessPreimage[:])
     witnessScript := append(WitnessMagicBytes, witnessCommitment[:]...)
 
 	// Finally, create the OP_RETURN carrying witness commitment
