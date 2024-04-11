@@ -2,7 +2,6 @@ package mining
 
 import (
 	"encoding/hex"
-	"fmt"
 	"math"
 
 	txn "github.com/humblenginr/btc-miner/transaction"
