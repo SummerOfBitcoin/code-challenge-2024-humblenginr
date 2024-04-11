@@ -116,8 +116,8 @@ func SelectTransactionsFromPaths(validTxnPaths []string) []*txn.Transaction {
 // Block Hash does not meet difficulty target
 
 func main() {
-    // UpdateValidTxns()
-    txns := SelectTransactionsFromPaths(TemporaryValidTxns)
+    UpdateValidTxns()
+    txns := mining.SelectTransactionsFromFolder(ValidTxnsDirPath)
     candidateBlock := mining.GetCandidateBlock(txns, true)
     mining.MineBlock(candidateBlock, OutputFilePath)
 }
