@@ -149,10 +149,10 @@ func (pq *PriorityQueue) update(item *Item, value txn.Transaction, priority int)
 	heap.Fix(pq, item.index)
 }
 
-func GetTop2000() []*txn.Transaction{
+func GetTop() []*txn.Transaction{
     pq := GetValidTxns()
     var txns []*txn.Transaction
-    for range 2000 {
+    for range 100 {
         item := heap.Pop(&pq).(*Item) 
         txns = append(txns, &item.value)
     }
@@ -161,7 +161,7 @@ func GetTop2000() []*txn.Transaction{
 
 func main() {
     UpdateValidTxns()
-    txns := GetTop2000()
+    txns := GetTop()
     candidateBlock := mining.GetCandidateBlock(txns, true)
     mining.MineBlock(candidateBlock, OutputFilePath)
 }
