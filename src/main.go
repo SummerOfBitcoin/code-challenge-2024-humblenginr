@@ -67,6 +67,10 @@ func UpdateValidTxns() {
     }
 }
 
+var TemporaryValidTxn =  []string{
+    "000cb561188c762c81f76976f816829424e2af9e0e491c617b7bf41038df3d35.json",
+}
+
 var TemporaryValidTxns =  []string{
     "000cb561188c762c81f76976f816829424e2af9e0e491c617b7bf41038df3d35.json",
     "001035505afbf143e51bd667099190943a38eee20092bb691e72eaa44992b2f7.json",
@@ -109,7 +113,7 @@ func SelectTransactionsFromPaths(validTxnPaths []string) []*txn.Transaction {
 
 func main() {
     UpdateValidTxns()
-    txns := SelectTransactionsFromPaths(TemporaryValidTxns)
+    txns := SelectTransactionsFromPaths(TemporaryValidTxn)
     candidateBlock := mining.GetCandidateBlock(txns, true)
     mining.MineBlock(candidateBlock, OutputFilePath)
 }
