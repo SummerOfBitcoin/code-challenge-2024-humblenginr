@@ -100,7 +100,7 @@ func GetValidTxns() *priorityQueue.Queue {
 func GetTop(pq *priorityQueue.Queue) []*txn.Transaction {
     txns := make([]*txn.Transaction, 0)
 
-    for range 2000 {
+    for range 1700 {
         t := txn.Transaction((pq.Pop()).(Item))
         txns = append(txns, &t)
     }
