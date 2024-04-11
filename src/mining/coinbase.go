@@ -52,14 +52,19 @@ func AddWitnessCommitmentX(coinbaseTx *txn.Transaction,
 
 	var witnessNonce [32]byte
 	coinbaseTx.Vin[0].Witness = []string{hex.EncodeToString(witnessNonce[:])} 
-    fmt.Printf("\n\nSerialized coinbase tx: %x\n\n", blockTxns[0].RawHex())
 
 	// Next, obtain the merkle root of a tree which consists of the
 	// wtxid of all transactions in the block. The coinbase
 	// transaction will have a special wtxid of all zeroes.
+    var zeroHash [32]byte
     wtxids := make([][32]byte, 0)
-    for _, t := range blockTxns {
-        wtxids = append(wtxids, [32]byte(utils.ReverseBytes(t.WitnessHash())))
+    for i, t := range blockTxns {
+        // coinbase
+        if(i == 0){
+            wtxids = append(wtxids, zeroHash)
+        } else {
+            wtxids = append(wtxids, [32]byte(utils.ReverseBytes(t.WitnessHash())))
+        }
     }
 
 	witnessMerkleRoot := GenerateMerkleTreeRoot(wtxids)
