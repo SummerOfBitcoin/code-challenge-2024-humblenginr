@@ -34,21 +34,23 @@ func (i Item) HigherPriorityThan(other priorityQueue.Interface) bool {
 
 var MaxBlockWeight = 4000000 - 100 // 100 is a buffer amount
 
+
+
 func GetCandidateBlock(txnPq *priorityQueue.Queue, hasWitness bool) Block {
     tarDif := new(big.Int)
     txns := make([]*txn.Transaction, 0)
 
     totalWeight := 0
 
+    j: 
     for {
         item := txnPq.Pop()
-        if (item == nil) { break }
+        if (item == nil) { break j }
         tx := txn.Transaction((item).(Item))
-        fmt.Printf("TOTw8: %v \n\n", totalWeight)
-        if(tx.GetWeight() + totalWeight <= MaxBlockWeight) {
+        if((tx.GetWeight() + totalWeight) <= MaxBlockWeight) {
             txns = append(txns, &tx)
             totalWeight += tx.GetWeight()
-        } else {break}
+        } else {break j}
     }
 
     fmt.Sscanf(targetDifficultyHexString, "%064x", tarDif)
