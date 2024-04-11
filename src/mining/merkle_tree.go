@@ -13,7 +13,7 @@ func HashMerkleBranches(left, right *[32]byte) [32]byte {
 	copy(hash[:32], left[:])
 	copy(hash[32:], right[:])
 
-    return [32]byte(utils.DoubleHash(hash[:]))
+    return [32]byte(utils.DoubleHashRaw(hash[:]))
 }
 
 // rollingMerkleTreeStore calculates the merkle root by only allocating O(logN)

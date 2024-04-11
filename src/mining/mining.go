@@ -42,7 +42,7 @@ func GetCandidateBlock(txns []*txn.Transaction, hasWitness bool) Block {
     }
 
     if(hasWitness){
-        AddWitnessCommitment(&cb, blockTxns)
+        AddWitnessCommitmentX(&cb, blockTxns)
     }
     candidateBlock.Coinbase = cb
 
