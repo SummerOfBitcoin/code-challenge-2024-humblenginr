@@ -165,6 +165,17 @@ func (tx *Transaction) SerializeSize() int {
 	return n
 }
 
+func (t Transaction) GetFeeByWeight() float64 {
+    return float64(t.GetFees())/float64(t.GetWeight())
+}
+
+func (t Transaction) GetWeight() int {
+	baseSize := t.SerializeSize()
+	totalSize := t.SerializeSizeWithWitness()
+
+	return (baseSize * 3) + totalSize
+}
+
 func (t Transaction) GetFees() int {
     // transaction fees = input sum value - output sum value
     inputSum, outputSum := 0,0
