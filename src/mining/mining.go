@@ -32,7 +32,7 @@ func (i Item) HigherPriorityThan(other priorityQueue.Interface) bool {
 	return i.Priority < other.(Item).Priority
 }
 
-var MaxBlockWeight = 4000000 - 100 // 100 is a buffer amount
+var MaxBlockWeight = 4000000 - 1000 // 100 is a buffer amount
 
 
 
