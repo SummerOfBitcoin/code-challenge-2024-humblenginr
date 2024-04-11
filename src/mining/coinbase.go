@@ -61,8 +61,10 @@ func AddWitnessCommitmentX(coinbaseTx *txn.Transaction,
         // coinbase
         if(t.Vin[0].IsCoinbase){
             wtxids = append(wtxids, zeroHash)
-        } else {
+        } else if(t.HasWitness()) {
             wtxids = append(wtxids, [32]byte(utils.ReverseBytes(t.WitnessHash())))
+        } else {
+            wtxids = append(wtxids, [32]byte(utils.ReverseBytes(t.TxHash())))
         }
     }
 
