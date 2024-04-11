@@ -56,12 +56,12 @@ func UpdateValidTxns() {
         if err != nil {
             panic(err)
         }
-        if(isValid){
+        if(isValid && !transaction.Vin[0].IsCoinbase){
             fileName := fmt.Sprintf("%s/%s", ValidTxnsDirPath, f.Name())
             os.WriteFile(fileName, byteResult, fs.FileMode(ValidTxnsDirPerm))
             validTxnsCount += 1
         }
-        if(validTxnsCount > 20){
+        if(validTxnsCount > 15){
             break
         }
     }

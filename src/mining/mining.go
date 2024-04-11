@@ -121,11 +121,8 @@ func SelectTransactionsFromFolder(validTxnsFolderPath string) []*txn.Transaction
     }
     txnSlice := make([]*txn.Transaction, 0)
 
-    for i, f := range files {
+    for _, f := range files {
         var transaction txn.Transaction
-        if(i == 100) {
-            return txnSlice
-        }
         txnPath := fmt.Sprintf("%s/%s", validTxnsFolderPath, f.Name())
         byteResult, _ := os.ReadFile(txnPath)
         err = json.Unmarshal(byteResult, &transaction)
