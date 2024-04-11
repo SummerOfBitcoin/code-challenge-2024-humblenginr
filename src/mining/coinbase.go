@@ -57,7 +57,12 @@ func AddWitnessCommitmentX(coinbaseTx *txn.Transaction,
 	// Next, obtain the merkle root of a tree which consists of the
 	// wtxid of all transactions in the block. The coinbase
 	// transaction will have a special wtxid of all zeroes.
-	witnessMerkleRoot := CalcMerkleRoot(blockTxns, true)
+    wtxids := make([][32]byte, 0)
+    for _, t := range blockTxns {
+        wtxids = append(wtxids, [32]byte(utils.ReverseBytes(t.WitnessHash())))
+    }
+
+	witnessMerkleRoot := GenerateMerkleTreeRoot(wtxids)
 
 	// The preimage to the witness commitment is:
 	// witnessRoot || coinbaseWitness
