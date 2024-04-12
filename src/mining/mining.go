@@ -29,7 +29,7 @@ func findValidPrevBlockHash(nBits uint32) [32]byte {
 type Item txn.Transaction
 
 func (i Item) HigherPriorityThan(other priorityQueue.Interface) bool {
-	return i.Priority < other.(Item).Priority
+	return i.Priority > other.(Item).Priority
 }
 
 var MaxBlockWeight = 4000000 - 1000 // 100 is a buffer amount
