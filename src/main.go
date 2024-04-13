@@ -6,13 +6,18 @@ import (
 	"github.com/humblenginr/btc-miner/mining"
 	txn "github.com/humblenginr/btc-miner/transaction"
 	"github.com/humblenginr/btc-miner/utils"
+	"github.com/humblenginr/btc-miner/txnpicker"
 )
 
 
-var OutputFilePath = "../output.txt"
+var (
+    OutputFilePath = "../output.txt"
+    MempoolDirPath = "../mempool"
+    MaxTxWeight = 4000000
+    BlockHeaderWeight = 320
+    MaxTotalWeight = 4000000 - BlockHeaderWeight
 
-
-
+)
 
 func LogDetailsAboutTx(tx txn.Transaction){
     txid := tx.TxHash()
@@ -23,7 +28,8 @@ func LogDetailsAboutTx(tx txn.Transaction){
 }
 
 func main() {
-    pq := GetTxnsQ()
-    candidateBlock := mining.GetCandidateBlock(pq, true)
+    picker := txnpicker.NewTransactionPicker(MempoolDirPath, MaxTxWeight, MaxTotalWeight)
+    txns := picker.PickUsingPQ()
+    candidateBlock := mining.GetCandidateBlock(txns, true)
     mining.MineBlock(candidateBlock, OutputFilePath)
 }

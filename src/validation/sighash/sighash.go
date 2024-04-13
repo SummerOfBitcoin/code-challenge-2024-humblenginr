@@ -91,7 +91,7 @@ func CalcSignatureHash(sigScript []byte, hashType SigHashType, tx *transaction.T
 
 	// double sha256 of the modified serialized
 	// transaction with hash type appended.
-	wbuf := bytes.NewBuffer(make([]byte, 0, txCopy.SerializeSize()+4))
+	wbuf := bytes.NewBuffer(make([]byte, 0, txCopy.SerializeSize(false)+4))
 	txCopy.Serialize(false, wbuf)
 	binary.Write(wbuf, binary.LittleEndian, hashType)
 	return utils.DoubleHash(wbuf.Bytes())

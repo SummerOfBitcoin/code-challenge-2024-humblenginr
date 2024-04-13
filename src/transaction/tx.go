@@ -119,22 +119,8 @@ func (t *Transaction) HasWitness() bool {
 	return false
 }
 
-
-func (tx *Transaction) SerializeSizeWithWitness() int {
-    witnessSize := 0
-    for _, t := range tx.Vin {
-        witnessByteArray := make([][]byte, 0)
-        for _, w := range t.Witness{
-            witness,_ := hex.DecodeString(w)
-            witnessByteArray = append(witnessByteArray, witness)
-        }
-        witnessSize += SerializeWitnessSize(witnessByteArray)
-    }
-    return tx.SerializeSize() + witnessSize
-}
-
 // SerializeSize returns the serialized size of the transaction without accounting for any witness data.
-func (tx *Transaction) SerializeSize() int {
+func (tx *Transaction) SerializeSize(witness bool) int {
 	// Version 4 bytes + LockTime 4 bytes + Serialized varint size for the
 	// number of transaction inputs and outputs.
 	n := 8 + VarIntSerializeSize(uint64(len(tx.Vin))) +
@@ -148,7 +134,7 @@ func (tx *Transaction) SerializeSize() int {
 		n += txOut.SerializeSize()
 	}
 
-	if tx.HasWitness() {
+	if tx.HasWitness() && witness {
 		// The marker, and flag fields take up two additional bytes.
 		n += 2
 
@@ -176,25 +162,9 @@ func (t Transaction) getFeeByWeight() float64 {
 }
 
 func (t Transaction) GetWeight() int {
-    weight := 0 
-    weight += 16
-    weight += 1
-    weight += 1
-    for _, i := range t.Vin {
-        weight += i.SerializeSize() * 4
-
-        witness := make([][]byte, 0)
-        for _, w := range i.Witness {
-            wt,_ := hex.DecodeString(w)
-            witness = append(witness, wt)
-        }
-        weight += SerializeWitnessSize(witness)
-    }
-    for _, o := range t.Vout {
-        weight += o.SerializeSize() * 4
-    }
-    weight += 16
-    return weight
+    nonWitnessSize := t.SerializeSize(false)
+    witnessSize := t.SerializeSize(true) - nonWitnessSize
+    return nonWitnessSize*4 + witnessSize
 }
 
 func (t Transaction) GetFees() int {
@@ -217,7 +187,7 @@ func (t Transaction) String() string {
 
 // RawHex gives the serialized transaction with witness data if any in bytes
 func (t Transaction) RawHex() []byte {
-   w := bytes.NewBuffer(make([]byte, 0, t.SerializeSize()))
+   w := bytes.NewBuffer(make([]byte, 0, t.SerializeSize(true)))
    err := t.Serialize(true, w)
    if err != nil {
       panic(err)
@@ -227,7 +197,7 @@ func (t Transaction) RawHex() []byte {
 }
 
 func (t Transaction) TxHash() []byte {
-    w := bytes.NewBuffer(make([]byte, 0, t.SerializeSize()))
+    w := bytes.NewBuffer(make([]byte, 0, t.SerializeSize(false)))
     // For calculating txid, we don't need the witness data
     err := t.Serialize(false, w)
    if err != nil {
@@ -239,7 +209,7 @@ func (t Transaction) TxHash() []byte {
 }
 
 func (t Transaction) WitnessHash() []byte {
-    w := bytes.NewBuffer(make([]byte, 0, t.SerializeSize()))
+    w := bytes.NewBuffer(make([]byte, 0, t.SerializeSize(true)))
     // For calculating txid, we don't need the witness data
     err := t.Serialize(true, w)
    if err != nil {
