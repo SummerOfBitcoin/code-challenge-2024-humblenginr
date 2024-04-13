@@ -16,6 +16,7 @@ var (
     MaxTxWeight = 4000000
     BlockHeaderWeight = 320
     MaxTotalWeight = 4000000 - BlockHeaderWeight
+    MaxFee = 20616923
 
 )
 
@@ -28,7 +29,7 @@ func LogDetailsAboutTx(tx txn.Transaction){
 }
 
 func main() {
-    picker := txnpicker.NewTransactionPicker(MempoolDirPath, MaxTxWeight, MaxTotalWeight)
+    picker := txnpicker.NewTransactionPicker(MempoolDirPath, MaxTxWeight, MaxTotalWeight, MaxFee)
     txns := picker.PickUsingPQ()
     candidateBlock := mining.GetCandidateBlock(txns, true)
     mining.MineBlock(candidateBlock, OutputFilePath)
