@@ -1,7 +1,6 @@
 package validation
 import (
 	"encoding/hex"
-	"fmt"
 	"strings"
 
 	"github.com/humblenginr/btc-miner/utils"
