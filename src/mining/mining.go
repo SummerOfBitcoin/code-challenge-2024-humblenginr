@@ -67,8 +67,7 @@ func GetCandidateBlock(txns []*txn.Transaction, hasWitness bool) Block {
 }
 
 func MineBlock(candidateBlock Block, outputFilePath string) error {
-    nonce := findNonce(&candidateBlock)
-    fmt.Printf("Found nonce: %d", nonce)
+    findNonce(&candidateBlock)
     err := candidateBlock.WriteToFile(outputFilePath)
     if err != nil {
         return err
@@ -89,7 +88,6 @@ func findNonce(candidateBlock *Block) uint32 {
         // hash the block header
         err := header.Serialize(w)
         if err != nil {
-            fmt.Printf("WARN: Could not serialize block header: %v", err)
             // else this might go in infinity loop
             panic(err)
         }

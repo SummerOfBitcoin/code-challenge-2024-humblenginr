@@ -1,7 +1,6 @@
 package mining
 
 import (
-	"fmt"
 	"math/bits"
 
 	"github.com/humblenginr/btc-miner/transaction"
@@ -120,7 +119,6 @@ func (s *rollingMerkleTreeStore) calcMerkleRoot(adds []*transaction.Transaction,
 			s.add(zeroHash)
 		case witness:
 			s.add([32]byte(adds[i].WitnessHash()))
-            fmt.Printf("Witness Hash: %x", adds[i].WitnessHash())
 		default:
 			s.add([32]byte(adds[i].TxHash()))
 		}

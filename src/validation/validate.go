@@ -99,13 +99,13 @@ func validateP2TR( tx transaction.Transaction, trIdx int ) bool {
         // 1. Parse public key and signature
         pk, sig, hashtype, err :=  schnorr.ParseSigAndPubkey(pubkey, sigBytes)
         if err != nil {
-            fmt.Println("Cannot parse signatuer and pub key: "+ err.Error())
+            // fmt.Println("Cannot parse signatuer and pub key: "+ err.Error())
             return false
         }
         // 2. Calculate signature hash
         sighash, err := sighash.CalcTaprootSignatureHash(&sighashes, hashtype,&tx, trIdx, nil, annexBytes)
         if err != nil {
-            fmt.Println("Cannot calculate signature hash : "+ err.Error())
+            // fmt.Println("Cannot calculate signature hash : "+ err.Error())
             return false
         }
         // 3. Verify signature
@@ -121,7 +121,6 @@ func validateP2TR( tx transaction.Transaction, trIdx int ) bool {
         if(s[33] != 0xac) {
             // fmt.Printf("Witness script: %x\n", s)
             // fmt.Printf("WARN: Skipping the transaction input since it's witness script is unrecognisable: %s\n", txIn)
-            fmt.Printf("Expected 0xac, got: %x\n", s[33])
             return false
         }
         // remove annex from the witness array, if found
@@ -134,23 +133,19 @@ func validateP2TR( tx transaction.Transaction, trIdx int ) bool {
         q, _ := hex.DecodeString(txIn.PrevOut.ScriptPubKey[4:])
         err = VerifyTaprootLeafCommitment(c,q,s)
         if err != nil {
-            fmt.Printf("INFO: Invalid taproot leaf commitment: %e\n", err)
             return false
         }
         if(ScriptHasOpSuccess(s)) {
-            fmt.Printf("INFO: Witness script has OpSuccess\n")
             return true
         }
         // parse the witness script
          if(!checkScriptParses(s)){
-            fmt.Printf("INFO: Could not parse witness script\n")
             return false
         }
         // parse sig and pk
         sigBytes, _ := hex.DecodeString(witness[0])
         pk, sig, hashtype, err :=  schnorr.ParseSigAndPubkey(s[1:33], sigBytes)
         if err != nil {
-            fmt.Println("Cannot parse signatuer and pub key: "+ err.Error())
             return false
         }
         // calculate sighash
@@ -159,7 +154,6 @@ func validateP2TR( tx transaction.Transaction, trIdx int ) bool {
 
         sighash, err := sighash.CalcTaprootSignatureHash(&sighashes, hashtype,&tx, trIdx,utils.ReverseBytes(tapLeafHash[:]), annexBytes)
         if err != nil {
-            fmt.Println("Cannot calculate signature hash : "+ err.Error())
         }
         // fmt.Printf("Schnorr Sighash: %x\n", sighash)
         serializedPubkey := schnorr.SerializePubKey(pk)

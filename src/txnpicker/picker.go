@@ -1,10 +1,7 @@
 package txnpicker
 
 import (
-	"fmt"
-
 	txn "github.com/humblenginr/btc-miner/transaction"
-	"github.com/humblenginr/btc-miner/utils"
 )
 
 type TransactionsPicker struct {
@@ -32,8 +29,6 @@ func (tp *TransactionsPicker) PickUsingPQ() []*txn.Transaction {
         tx := txn.Transaction(item.(Item))
         weight := tx.GetWeight()
         fee := tx.GetFees()
-        fmt.Printf("Weight of the transaction: %d\n", weight)
-        fmt.Printf("Txid: %x\n", utils.ReverseBytes(tx.TxHash()))
         if((weight+ totalWeight < tp.MaxTotalWeight) && (fee + totalFee < tp.MaxFees)) {
             txns = append(txns, &tx)
             totalWeight += weight
