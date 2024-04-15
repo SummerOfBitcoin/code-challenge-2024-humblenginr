@@ -16,8 +16,7 @@ var (
     MaxTxWeight = 4000000
     BlockHeaderWeight = 320
     MaxTotalWeight = 4000000 - BlockHeaderWeight
-    MaxFee = 20616923
-
+    MaxFee = 31616923
 )
 
 func LogDetailsAboutTx(tx txn.Transaction){
