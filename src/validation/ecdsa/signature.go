@@ -34,11 +34,7 @@ const (
 	// 0x30 + <1-byte> + 0x02 + 0x01 + <byte> + 0x2 + 0x01 + <byte>
 	MinSigLen = 8
 
-	// MaxSigLen is the maximum length of a DER encoded signature and is
-	// when both R and S are 33 bytes each.  It is 33 bytes because a
-	// 256-bit integer requires 32 bytes and an additional leading null byte
-	// might be required if the high bit is set in the value.
-	//
+	// MaxSigLen is when both R and S are 33 bytes each
 	// 0x30 + <1-byte> + 0x02 + 0x21 + <33 bytes> + 0x2 + 0x21 + <33 bytes>
 	MaxSigLen = 72
 )
@@ -59,19 +55,10 @@ func canonicalPadding(b []byte) error {
 	}
 }
 
-
+// parseSig makes sure that the signature is of the format: 0x30 <length of whole message> <0x02> <length of R> <R> 0x2 <length of S> <S>.
 func parseSig(sigStr []byte, der bool) (*Signature, error) {
-	// Originally this code used encoding/asn1 in order to parse the
-	// signature, but a number of problems were found with this approach.
-	// Despite the fact that signatures are stored as DER, the difference
-	// between go's idea of a bignum (and that they have sign) doesn't agree
-	// with the openssl one (where they do not). The above is true as of
-	// Go 1.1. In the end it was simpler to rewrite the code to explicitly
-	// understand the format which is this:
-	// 0x30 <length of whole message> <0x02> <length of R> <R> 0x2
-	// <length of S> <S>.
 
-	// The signature must adhere to the minimum and maximum allowed length.
+	// check signature length
 	totalSigLen := len(sigStr)
 	if totalSigLen < MinSigLen {
 		return nil, errors.New("malformed signature: too short")
@@ -90,12 +77,9 @@ func parseSig(sigStr []byte, der bool) (*Signature, error) {
 	siglen := sigStr[index]
 	index++
 
-	// siglen should be less than the entire message and greater than
-	// the minimal message size.
 	if int(siglen+2) > len(sigStr) || int(siglen+2) < MinSigLen {
 		return nil, errors.New("malformed signature: bad length")
 	}
-	// trim the slice we're working on so we only look at what matters.
 	sigStr = sigStr[:siglen+2]
 
 	// 0x02
@@ -105,16 +89,13 @@ func parseSig(sigStr []byte, der bool) (*Signature, error) {
 	}
 	index++
 
-	// Length of signature R.
 	rLen := int(sigStr[index])
-	// must be positive, must be able to fit in another 0x2, <len> <s>
-	// hence the -3. We assume that the length must be at least one byte.
 	index++
 	if rLen <= 0 || rLen > len(sigStr)-index-3 {
 		return nil, errors.New("malformed signature: bogus R length")
 	}
 
-	// Then R itself.
+    // R
 	rBytes := sigStr[index : index+rLen]
 	if der {
 		switch err := canonicalPadding(rBytes); err {
@@ -125,14 +106,11 @@ func parseSig(sigStr []byte, der bool) (*Signature, error) {
 		}
 	}
 
-	// Strip leading zeroes from R.
 	for len(rBytes) > 0 && rBytes[0] == 0x00 {
 		rBytes = rBytes[1:]
 	}
 
-	// R must be in the range [1, N-1].  Notice the check for the maximum number
-	// of bytes is required because SetByteSlice truncates as noted in its
-	// comment so it could otherwise fail to detect the overflow.
+	// R must be in the range [1, N-1]
 	var r secp.ModNScalar
 	if len(rBytes) > 32 {
 		str := "invalid signature: R is larger than 256 bits"
@@ -177,9 +155,6 @@ func parseSig(sigStr []byte, der bool) (*Signature, error) {
 		sBytes = sBytes[1:]
 	}
 
-	// S must be in the range [1, N-1].  Notice the check for the maximum number
-	// of bytes is required because SetByteSlice truncates as noted in its
-	// comment so it could otherwise fail to detect the overflow.
 	var s secp.ModNScalar
 	if len(sBytes) > 32 {
 		str := "invalid signature: S is larger than 256 bits"
@@ -202,7 +177,6 @@ func parseSig(sigStr []byte, der bool) (*Signature, error) {
 	}
 
 	return NewSignature(r, s), nil
-
 }
 
 
@@ -222,11 +196,7 @@ func ParseSigAndPubkey(pkBytes, fullSigBytes []byte) (*secp.PublicKey, *Signatur
 	// parse the signature 
     // we assume that every signature is in DER format
 	var signature *Signature
-	//if strictEncoding {
-		signature, err = parseSig(sigBytes, true)
-	//} else {
-	//	signature, err = parseSig(sigBytes, false)
-	// }
+    signature, err = parseSig(sigBytes, true)
 	if err != nil {
 		return nil, nil, 0, err
 	}

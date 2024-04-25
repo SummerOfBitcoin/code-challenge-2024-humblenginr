@@ -98,13 +98,11 @@ func validateP2TR( tx transaction.Transaction, trIdx int ) bool {
         // 1. Parse public key and signature
         pk, sig, hashtype, err :=  schnorr.ParseSigAndPubkey(pubkey, sigBytes)
         if err != nil {
-            // fmt.Println("Cannot parse signatuer and pub key: "+ err.Error())
             return false
         }
         // 2. Calculate signature hash
         sighash, err := sighash.CalcTaprootSignatureHash(&sighashes, hashtype,&tx, trIdx, nil, annexBytes)
         if err != nil {
-            // fmt.Println("Cannot calculate signature hash : "+ err.Error())
             return false
         }
         // 3. Verify signature
@@ -113,18 +111,14 @@ func validateP2TR( tx transaction.Transaction, trIdx int ) bool {
     } else {
         // script path spending
         if(len(witness) != 3){
-            // fmt.Printf("WARN: Rejecting unknown transaction. We don't yet know how to validate this transaction input: %s\n", txIn)
             return false
         }
         s,_ := hex.DecodeString(witness[len(witness)-2])
         if(s[33] != 0xac) {
-            // fmt.Printf("Witness script: %x\n", s)
-            // fmt.Printf("WARN: Skipping the transaction input since it's witness script is unrecognisable: %s\n", txIn)
             return false
         }
         // remove annex from the witness array, if found
         witness,_ = RemoveAnnexFromWitness(witness)
-        // fmt.Printf("INFO: Witness length: %d\n", len(witness))
         // parse the control block
         cb_bytes,_ := hex.DecodeString(witness[len(witness)-1])
         c, err := ParseControlBlock(cb_bytes)
@@ -149,12 +143,10 @@ func validateP2TR( tx transaction.Transaction, trIdx int ) bool {
         }
         // calculate sighash
         tapLeafHash := NewTapLeaf(0xc0,s).TapHash()
-        // fmt.Printf("p: %x, q: %x, k: %x\n",cb_bytes[1:33],q, utils.ReverseBytes(tapLeafHash[:]))
 
         sighash, err := sighash.CalcTaprootSignatureHash(&sighashes, hashtype,&tx, trIdx,utils.ReverseBytes(tapLeafHash[:]), annexBytes)
         if err != nil {
         }
-        // fmt.Printf("Schnorr Sighash: %x\n", sighash)
         serializedPubkey := schnorr.SerializePubKey(pk)
         return schnorr.Verify(sig, sighash, serializedPubkey)
     }

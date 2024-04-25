@@ -22,28 +22,16 @@ type TaprootSigHashes struct {
 }
 
 
-// taprootSigHashOptions houses a set of functional options that may optionally
-// modify how the taproot/script sighash digest algorithm is implemented.
 type taprootSigHashOptions struct {
-	// extFlag denotes the current message digest extension being used. For
-	// top-level script spends use a value of zero, while each tapscript
-	// version can define its own values as well.
+	// extFlag denotes the current message digest extension being used
 	extFlag uint8
-
 	// annexHash is the sha256 hash of the annex with a compact size length
-	// prefix: sha256(sizeOf(annex) || annex).
+	// prefix: sha256(sizeOf(annex) || annex)
 	annexHash []byte
-
-	// tapLeafHash is the hash of the tapscript leaf as defined in BIP 341.
 	// This should be h_tapleaf(version || compactSizeOf(script) || script).
 	tapLeafHash []byte
-
-	// keyVersion is the key version as defined in BIP 341. This is always
-	// 0x00 for all currently defined leaf versions.
+	// always 0x00 for all currently defined leaf versions.
 	keyVersion byte
-
-	// codeSepPos is the op code position of the last code separator. This
-	// is used for the BIP 342 sighash message extension.
 	codeSepPos uint32
 }
 // writeDigestExtensions writes out the sighash message extension defined by the
@@ -97,10 +85,6 @@ func newKeyPathSpendingTaprootSighashOptions(annex []byte) *taprootSigHashOption
     return &o
 
 }
-
-// TaprootSigHashOption defines a set of functional param options that can be
-// used to modify the base sighash message with optional extensions.
-type TaprootSigHashOption func(*taprootSigHashOptions)
 
 // isValidTaprootSigHash returns true if the passed sighash is a valid taproot
 // sighash.
@@ -160,7 +144,6 @@ func CalcTaprootSignatureHash(sigHashes *TaprootSigHashes, hType SigHashType,
 	// The spend type is (ext_flag*2) + annex_present (BIP341)
 	input := tx.Vin[idx]
 	witnessHasAnnex := opts.annexHash != nil
-    // fmt.Printf("witnessHasAnnex: %v\n", opts.annexHash)
 	spendType := byte(opts.extFlag) * 2
 	if witnessHasAnnex {
 		spendType += 1
@@ -216,7 +199,6 @@ func CalcTaprootSignatureHash(sigHashes *TaprootSigHashes, hType SigHashType,
 	if err := opts.writeDigestExtensions(&sigMsg); err != nil {
 		return nil, err
 	}
-    // fmt.Printf("Signature hash before hashing: %x\n", sigMsg.Bytes())
     // done according to BIP341 - https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki
 	sigHash := utils.TaggedHash(utils.TagTapSighash, sigMsg.Bytes())
 	return sigHash[:], nil

@@ -52,7 +52,6 @@ func TargetToNbits(n *big.Int) uint32 {
 		mantissa = uint32(n.Bits()[0])
 		mantissa <<= 8 * (3 - exponent)
 	} else {
-		// Use a copy to avoid modifying the caller's original number.
 		tn := new(big.Int).Set(n)
 		mantissa = uint32(tn.Rsh(tn, 8*(exponent-3)).Bits()[0])
 	}

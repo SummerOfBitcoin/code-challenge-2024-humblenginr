@@ -103,8 +103,6 @@ type SegwitSigHashes struct {
     HashOutputs [32]byte
 }
 
-
-
 func extractWitnessPubKeyHash(script []byte) []byte {
 	// A pay-to-witness-pubkey-hash script is of the form:
 	//   OP_0 OP_DATA_20 <20-byte-hash>
@@ -126,25 +124,17 @@ func CalcWitnessSignatureHash(subScript []byte, sigHashes *SegwitSigHashes,
 	hashType SigHashType, tx *transaction.Transaction, idx int) ([]byte, error) {
 	w := bytes.NewBuffer(make([]byte, 0))
     var scratch [8]byte
-    // First write out, then encode the transaction's version
-    // number.
+    // version number
     binary.LittleEndian.PutUint32(scratch[:], uint32(tx.Version))
     w.Write(scratch[:4])
-    // Next write out the possibly pre-calculated hashes for the
-    // sequence numbers of all inputs, and the hashes of the
-    // previous outs for all outputs.
+
     var zeroHash [32]byte
-    // If anyone can pay isn't active, then we can use the cached
-    // hashPrevOuts, otherwise we just write zeroes for the prev
-    // outs.
     if hashType&SigHashAnyOneCanPay == 0 {
         w.Write(sigHashes.HashPrevouts[:])
     } else {
         w.Write(zeroHash[:])
     }
-    // If the sighash isn't anyone can pay, single, or none, the
-    // use the cached hash sequences, otherwise write all zeroes
-    // for the hashSequence.
+
     if hashType&SigHashAnyOneCanPay == 0 &&
         hashType&sigHashMask != SigHashSingle &&
         hashType&sigHashMask != SigHashNone {
@@ -153,7 +143,6 @@ func CalcWitnessSignatureHash(subScript []byte, sigHashes *SegwitSigHashes,
         w.Write(zeroHash[:])
     }
     txIn := tx.Vin[idx]
-    // Next, write the outpoint being spent.
     prevOutHash,_ := hex.DecodeString(txIn.Txid)
     // have to reverse it
     prevOutHash = utils.ReverseBytes(prevOutHash)
@@ -163,7 +152,7 @@ func CalcWitnessSignatureHash(subScript []byte, sigHashes *SegwitSigHashes,
         bIndex[:], uint32(txIn.Vout),
     )
     w.Write(bIndex[:])
-    // Next, write subscript
+    // write subscript
     if isWitnessPubKeyHashScript(subScript) {
     w.Write([]byte{0x19})
     w.Write([]byte{0x76}) // OP_DUP
@@ -173,24 +162,14 @@ func CalcWitnessSignatureHash(subScript []byte, sigHashes *SegwitSigHashes,
     w.Write([]byte{0x88}) // OP_EQUALVERIFY
     w.Write([]byte{0xac}) // OP_CHECKSIG
     }else {
-        // For p2wsh outputs, and future outputs, the script
-        // code is the original script, with all code
-        // separators removed, serialized with a var int length
-        // prefix.
         transaction.WriteVarBytes(w, subScript)
     }
 
-    // Next, add the input amount, and sequence number of the input
-    // being signed.
     binary.LittleEndian.PutUint64(scratch[:], uint64(txIn.PrevOut.Value))
     w.Write(scratch[:])
     binary.LittleEndian.PutUint32(scratch[:], uint32(txIn.Sequence))
     w.Write(scratch[:4])
 
-    // If the current signature mode isn't single, or none, then we
-    // can re-use the pre-generated hashoutputs sighash fragment.
-    // Otherwise, we'll serialize and add only the target output
-    // index to the signature pre-image.
     if hashType&sigHashMask != SigHashSingle &&
         hashType&sigHashMask != SigHashNone {
 
@@ -204,8 +183,7 @@ func CalcWitnessSignatureHash(subScript []byte, sigHashes *SegwitSigHashes,
     } else {
         w.Write(zeroHash[:])
     }
-    // Finally, write out the transaction's locktime, and the sig
-    // hash type.
+    // locktime and sighash type.
     binary.LittleEndian.PutUint32(scratch[:], tx.Locktime)
     w.Write(scratch[:4])
     binary.LittleEndian.PutUint32(scratch[:], uint32(hashType))

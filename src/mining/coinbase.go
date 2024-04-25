@@ -37,7 +37,7 @@ func NewCoinbaseTransaction(fees int) txn.Transaction {
     return t
 }
 
-var WitnessMagicBytes = []byte{
+var PreWitnessScriptBytes = []byte{
 		0x6a,
 		0x24,
 		0xaa,
@@ -46,15 +46,11 @@ var WitnessMagicBytes = []byte{
 		0xed,
 	}
 
-func AddWitnessCommitmentX(coinbaseTx *txn.Transaction,
+func AddWitnessCommitment(coinbaseTx *txn.Transaction,
 	blockTxns []*txn.Transaction) []byte {
-
 	var witnessNonce [32]byte
 	coinbaseTx.Vin[0].Witness = []string{hex.EncodeToString(witnessNonce[:])} 
 
-	// Next, obtain the merkle root of a tree which consists of the
-	// wtxid of all transactions in the block. The coinbase
-	// transaction will have a special wtxid of all zeroes.
     var zeroHash [32]byte
     wtxids := make([][32]byte, 0)
     for _, t := range blockTxns {
@@ -70,22 +66,13 @@ func AddWitnessCommitmentX(coinbaseTx *txn.Transaction,
 
 	witnessMerkleRoot := GenerateMerkleTreeRoot(wtxids)
 
-	// The preimage to the witness commitment is:
-	// witnessRoot || coinbaseWitness
 	var witnessPreimage [64]byte
 	copy(witnessPreimage[:32], witnessMerkleRoot[:])
 	copy(witnessPreimage[32:], witnessNonce[:])
 
-	// The witness commitment itself is the double-sha256 of the
-	// witness preimage generated above. With the commitment
-	// generated, the witness script for the output is: OP_RETURN
-	// OP_DATA_36 {0xaa21a9ed || witnessCommitment}. The leading
-	// prefix is referred to as the "witness magic bytes".
     witnessCommitment := utils.DoubleHash(witnessPreimage[:])
-    witnessScript := append(WitnessMagicBytes, witnessCommitment[:]...)
+    witnessScript := append(PreWitnessScriptBytes, witnessCommitment[:]...)
 
-	// Finally, create the OP_RETURN carrying witness commitment
-	// output as an additional output within the coinbase.
 	commitmentOutput := txn.Vout{
 		Value:    0,
 		ScriptPubKey: hex.EncodeToString(witnessScript),
@@ -94,42 +81,4 @@ func AddWitnessCommitmentX(coinbaseTx *txn.Transaction,
 		commitmentOutput)
 
     return witnessCommitment[:]
-}
-
-/*
-    What parts are all involved in witness commitment?
-    1. Calculation of Merkle root
-    2. Witness Commitment = HASH256(witnessMerkleRoot | witnessNonce)
-    3. Add (Witness Magic Bytes | Witness commitment) as the ScriptPubKey of the last output in the coinbase transaction
-
-*/
-func AddWitnessCommitment(coinbase *txn.Transaction, txns []*txn.Transaction) error {
-	var witnessNonce [32]byte
-
-    coinbase.Vin[0].Witness = append(coinbase.Vin[0].Witness, WitnessReserveHexString)
-    // assuming that the merkle root is right
-	witnessMerkleRoot := CalcMerkleRoot(txns, true)
-
-    var witnessPreimage [64]byte
-	copy(witnessPreimage[:32], witnessMerkleRoot[:])
-	copy(witnessPreimage[32:], witnessNonce[:])
-    witnessCommitment := utils.DoubleHashRaw(witnessPreimage[:])
-    witnessCommitment = [32]byte(witnessCommitment[:])
-    witnessScript := []byte{
-        // OP_RETURN
-		0x6a,
-        // OP_DATA36
-		0x24,
-		0xaa,
-		0x21,
-		0xa9,
-		0xed,
-	}
-    witnessScript = append(witnessScript, witnessCommitment[:]...)
-    witnessOut := txn.Vout{}
-    witnessOut.Value = 0
-    witnessOut.ScriptPubKey = hex.EncodeToString(witnessScript)
-    coinbase.Vout = append(coinbase.Vout, witnessOut)
-
-    return nil
 }

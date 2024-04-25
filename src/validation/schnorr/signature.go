@@ -38,8 +38,6 @@ func ParsePubKey(pubKeyStr []byte) (*secp.PublicKey, error) {
 		return nil, err
 	}
 
-	// We'll manually prepend the compressed byte so we can re-use the
-	// existing pubkey parsing routine of the main btcec package.
 	var keyCompressed [secp.PubKeyBytesLenCompressed]byte
 	keyCompressed[0] = secp.PubKeyFormatCompressedEven
 	copy(keyCompressed[1:], pubKeyStr)
@@ -52,42 +50,24 @@ func ParsePubKey(pubKeyStr []byte) (*secp.PublicKey, error) {
 // returns an error if the pubkey is invalid, or the sig is.
 func ParseSigAndPubkey(pkBytes, rawSig []byte,
 ) (*secp.PublicKey, *Signature, sighash.SigHashType, error) {
-
-	// Now that we have the raw key, we'll parse it into a schnorr public
-	// key we can work with.
 	pubKey, err := ParsePubKey(pkBytes)
 
 	if err != nil {
 		return nil, nil, 0, err
 	}
-
-	// Next, we'll parse the signature, which may or may not be appended
-	// with the desired sighash flag.
 	var (
 		sig         *Signature
 		sigHashType sighash.SigHashType
 	)
 	switch {
-	// If the signature is exactly 64 bytes, then we know we're using the
-	// implicit SIGHASH_DEFAULT sighash type.
 	case len(rawSig) == 64:
-		// First, parse out the signature which is just the raw sig itself.
 		sig, err = ParseSignature(rawSig)
 		if err != nil {
 			return nil, nil, 0, err
 		}
-
-		// If the sig is 64 bytes, then we'll assume that it's the
-		// default sighash type, which is actually an alias for
-		// SIGHASH_ALL.
 		sigHashType = sighash.SigHashDefault
 
-	// Otherwise, if this is a signature, with a sighash looking byte
-	// appended that isn't all zero, then we'll extract the sighash from
-	// the end of the signature.
 	case len(rawSig) == 64+1 && rawSig[64] != 0:
-		// Extract the sighash type, then snip off the last byte so we can
-		// parse the signature.
 		sigHashType = sighash.SigHashType(rawSig[64])
 
 		rawSig = rawSig[:64]
@@ -96,7 +76,6 @@ func ParseSigAndPubkey(pkBytes, rawSig []byte,
 			return nil, nil, 0, err
 		}
 
-	// Otherwise, this is an invalid signature, so we need to bail out.
 	default:
 		str := fmt.Sprintf("invalid sig len: %v", len(rawSig))
 		return nil, nil, 0, errors.New(str)
@@ -119,10 +98,6 @@ func ParseSignature(sig []byte) (*Signature, error) {
 		return nil, errors.New(str)
 	}
 
-	// The signature is validly encoded at this point, however, enforce
-	// additional restrictions to ensure r is in the range [0, p-1], and s is in
-	// the range [0, n-1] since valid Schnorr signatures are required to be in
-	// that range per spec.
 	var r secp.FieldVal
 	if overflow := r.SetByteSlice(sig[0:32]); overflow {
 		str := "invalid signature: r >= field prime"
@@ -134,18 +109,11 @@ func ParseSignature(sig []byte) (*Signature, error) {
 		return nil, errors.New(str)
 	}
 
-	// Return the signature.
 	return NewSignature(&r, &s), nil
 }
 
 
-// schnorrVerify attempt to verify the signature for the provided hash and
-// secp256k1 public key and either returns nil if successful or a specific error
-// indicating why it failed if not successful.
-//
-// This differs from the exported Verify method in that it returns a specific
-// error to support better testing while the exported method simply returns a
-// bool indicating success or failure.
+// This is taken from btcd repository (https://github.com/btcsuite/btcd). I came to know that it is not necessary to validate schnorr signatures only after I implemented these.
 func Verify(sig *Signature, hash []byte, pubKeyBytes []byte) bool {
 	// The algorithm for producing a BIP-340 signature is described in
 	// README.md and is reproduced here for reference:

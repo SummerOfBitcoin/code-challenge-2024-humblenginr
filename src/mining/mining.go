@@ -27,7 +27,7 @@ func findValidPrevBlockHash(nBits uint32) [32]byte {
 
 
 
-var MaxBlockWeight = 4000000 - 1000 // 100 is a buffer amount
+var MaxBlockWeight = 4000000 - 1000 // 1000 is the buffer amount
 
 func GetCandidateBlock(txns []*txn.Transaction, hasWitness bool) Block {
     tarDif := new(big.Int)
@@ -44,7 +44,7 @@ func GetCandidateBlock(txns []*txn.Transaction, hasWitness bool) Block {
     }
 
     if(hasWitness){
-        AddWitnessCommitmentX(&cb, blockTxns)
+        AddWitnessCommitment(&cb, blockTxns)
     }
     candidateBlock.Coinbase = cb
 
@@ -93,10 +93,6 @@ func findNonce(candidateBlock *Block) uint32 {
         }
 
         hash := utils.DoubleHashRaw(w.Bytes())
-
-       // fmt.Printf("Hash:   %x\n", hash)
-        // fmt.Printf("Hash Value:   %d\n", HashToBig(&hash))
-        // fmt.Printf("Target Value: %d\n", NbitsToTarget(candidateBlock.BlockHeader.Bits))
 
         // compare with difficulty target
         if HashToBig(&hash).Cmp(NbitsToTarget(nBits)) <= 0 {
